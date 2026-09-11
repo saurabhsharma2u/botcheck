@@ -3,7 +3,7 @@ package cli
 import (
 	"context"
 
-	"github.com/saurabhsharma2u/iambot/internal/version"
+	"github.com/saurabhsharma2u/botcheck/internal/version"
 	"github.com/spf13/cobra"
 )
 

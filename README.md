@@ -7,7 +7,7 @@ Applebot, Meta and more — at ~1M log lines per second.
 ## Quick start
 
 ```bash
-go install github.com/saurabhsharma2u/iambot/cmd/botcheck@latest
+go install github.com/saurabhsharma2u/botcheck/cmd/botcheck@latest
 
 botcheck refresh
 botcheck scan /var/log/nginx/access.log --only-matched

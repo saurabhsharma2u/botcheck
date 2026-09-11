@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	DefaultRegistryURL = "https://raw.githubusercontent.com/saurabhsharma2u/iambot/{ref}/registry/manifest.yaml"
+	DefaultRegistryURL = "https://raw.githubusercontent.com/saurabhsharma2u/botcheck/{ref}/registry/manifest.yaml"
 	DefaultRegistryRef = "main"
 )
 

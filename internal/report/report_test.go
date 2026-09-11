@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/saurabhsharma2u/iambot/internal/logparse"
-	"github.com/saurabhsharma2u/iambot/internal/matcher"
+	"github.com/saurabhsharma2u/botcheck/internal/logparse"
+	"github.com/saurabhsharma2u/botcheck/internal/matcher"
 )
 
 func testHit() Result {

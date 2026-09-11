@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/saurabhsharma2u/iambot/internal/cli"
+	"github.com/saurabhsharma2u/botcheck/internal/cli"
 )
 
 func main() {

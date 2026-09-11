@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/saurabhsharma2u/iambot/internal/matcher"
+	"github.com/saurabhsharma2u/botcheck/internal/matcher"
 )
 
 type diskRegistry struct {

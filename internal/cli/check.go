@@ -7,8 +7,8 @@ import (
 	"net/netip"
 	"os"
 
-	"github.com/saurabhsharma2u/iambot/internal/config"
-	"github.com/saurabhsharma2u/iambot/internal/registry"
+	"github.com/saurabhsharma2u/botcheck/internal/config"
+	"github.com/saurabhsharma2u/botcheck/internal/registry"
 	"github.com/spf13/cobra"
 )
 

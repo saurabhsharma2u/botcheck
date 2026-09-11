@@ -69,5 +69,5 @@ sources:
   - name: facebook
     category: social
     type: http
-    url: https://raw.githubusercontent.com/saurabhsharma2u/iambot/main/registry/meta/fb.txt
+    url: https://raw.githubusercontent.com/saurabhsharma2u/botcheck/main/registry/meta/fb.txt
     enabled: true

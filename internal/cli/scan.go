@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/saurabhsharma2u/iambot/internal/config"
-	"github.com/saurabhsharma2u/iambot/internal/logparse"
-	"github.com/saurabhsharma2u/iambot/internal/registry"
-	"github.com/saurabhsharma2u/iambot/internal/report"
+	"github.com/saurabhsharma2u/botcheck/internal/config"
+	"github.com/saurabhsharma2u/botcheck/internal/logparse"
+	"github.com/saurabhsharma2u/botcheck/internal/registry"
+	"github.com/saurabhsharma2u/botcheck/internal/report"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +32,7 @@ func init() {
 }
 
 var scanCmd = &cobra.Command{
-	Use:   "scan <logfile...>",
+	Use:   "scan <logfile...> (- for stdin)",
 	Short: "Scan log files for known bot IPs",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -66,15 +66,25 @@ var scanCmd = &cobra.Command{
 
 		failed := false
 		for _, filename := range args {
+			display := filename
+			if filename == "-" {
+				display = "stdin"
+			}
 			if !scanQuiet {
-				fmt.Fprintf(os.Stderr, "Scanning %s...\n", filename)
+				fmt.Fprintf(os.Stderr, "Scanning %s...\n", display)
 			}
 
-			f, err := os.Open(filename)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error opening %s: %v\n", filename, err)
-				failed = true
-				continue
+			var f *os.File
+			if filename == "-" {
+				f = os.Stdin
+			} else {
+				var err error
+				f, err = os.Open(filename)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error opening %s: %v\n", display, err)
+					failed = true
+					continue
+				}
 			}
 
 			scanner := bufio.NewScanner(f)
@@ -110,14 +120,16 @@ var scanCmd = &cobra.Command{
 			}
 
 			if err := scanner.Err(); err != nil {
-				fmt.Fprintf(os.Stderr, "Error reading %s: %v\n", filename, err)
+				fmt.Fprintf(os.Stderr, "Error reading %s: %v\n", display, err)
 				failed = true
 			}
 			if skipped > 0 {
-				fmt.Fprintf(os.Stderr, "Skipped %d invalid lines in %s\n", skipped, filename)
+				fmt.Fprintf(os.Stderr, "Skipped %d invalid lines in %s\n", skipped, display)
 			}
-			if err := f.Close(); err != nil {
-				fmt.Fprintf(os.Stderr, "Error closing %s: %v\n", filename, err)
+			if filename != "-" {
+				if err := f.Close(); err != nil {
+					fmt.Fprintf(os.Stderr, "Error closing %s: %v\n", display, err)
+				}
 			}
 		}
 

@@ -8,9 +8,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/saurabhsharma2u/iambot/internal/config"
-	"github.com/saurabhsharma2u/iambot/internal/registry"
-	"github.com/saurabhsharma2u/iambot/internal/source"
+	"github.com/saurabhsharma2u/botcheck/internal/config"
+	"github.com/saurabhsharma2u/botcheck/internal/registry"
+	"github.com/saurabhsharma2u/botcheck/internal/source"
 	"github.com/spf13/cobra"
 )
 

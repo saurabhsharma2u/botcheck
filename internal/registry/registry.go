@@ -6,7 +6,7 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/saurabhsharma2u/iambot/internal/matcher"
+	"github.com/saurabhsharma2u/botcheck/internal/matcher"
 )
 
 var ErrEmpty = errors.New("registry is empty, run `botcheck refresh`")

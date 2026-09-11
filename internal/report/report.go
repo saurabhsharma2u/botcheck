@@ -2,8 +2,8 @@ package report
 
 import (
 	"fmt"
-	"github.com/saurabhsharma2u/iambot/internal/logparse"
-	"github.com/saurabhsharma2u/iambot/internal/matcher"
+	"github.com/saurabhsharma2u/botcheck/internal/logparse"
+	"github.com/saurabhsharma2u/botcheck/internal/matcher"
 	"io"
 )
 

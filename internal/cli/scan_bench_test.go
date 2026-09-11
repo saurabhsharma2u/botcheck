@@ -6,10 +6,10 @@ import (
 	"io"
 	"testing"
 
-	"github.com/saurabhsharma2u/iambot/internal/logparse"
-	"github.com/saurabhsharma2u/iambot/internal/matcher"
-	"github.com/saurabhsharma2u/iambot/internal/registry"
-	"github.com/saurabhsharma2u/iambot/internal/report"
+	"github.com/saurabhsharma2u/botcheck/internal/logparse"
+	"github.com/saurabhsharma2u/botcheck/internal/matcher"
+	"github.com/saurabhsharma2u/botcheck/internal/registry"
+	"github.com/saurabhsharma2u/botcheck/internal/report"
 )
 
 // BenchmarkScanPipeline mirrors scan's hot loop (parse + lookup + report)

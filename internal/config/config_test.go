@@ -99,13 +99,13 @@ sources:
 
 func TestResolvedRegistryURL(t *testing.T) {
 	cfg := &Config{}
-	want := "https://raw.githubusercontent.com/saurabhsharma2u/iambot/main/registry/manifest.yaml"
+	want := "https://raw.githubusercontent.com/saurabhsharma2u/botcheck/main/registry/manifest.yaml"
 	if got := cfg.ResolvedRegistryURL(); got != want {
 		t.Errorf("expected %q, got %q", want, got)
 	}
 
 	cfg = &Config{RegistryRef: "v1.0.0"}
-	want = "https://raw.githubusercontent.com/saurabhsharma2u/iambot/v1.0.0/registry/manifest.yaml"
+	want = "https://raw.githubusercontent.com/saurabhsharma2u/botcheck/v1.0.0/registry/manifest.yaml"
 	if got := cfg.ResolvedRegistryURL(); got != want {
 		t.Errorf("expected %q, got %q", want, got)
 	}

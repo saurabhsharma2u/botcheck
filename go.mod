@@ -1,4 +1,4 @@
-module github.com/saurabhsharma2u/iambot
+module github.com/saurabhsharma2u/botcheck
 
 go 1.24.3
 

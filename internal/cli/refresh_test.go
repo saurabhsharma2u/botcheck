@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/saurabhsharma2u/iambot/internal/registry"
+	"github.com/saurabhsharma2u/botcheck/internal/registry"
 )
 
 func writeFile(t *testing.T, path, content string) {

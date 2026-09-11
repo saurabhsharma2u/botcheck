@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/netip"
 
-	"github.com/saurabhsharma2u/iambot/internal/matcher"
+	"github.com/saurabhsharma2u/botcheck/internal/matcher"
 )
 
 type Source interface {

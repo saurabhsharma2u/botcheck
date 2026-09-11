@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/saurabhsharma2u/iambot/internal/matcher"
-	"github.com/saurabhsharma2u/iambot/internal/registry"
+	"github.com/saurabhsharma2u/botcheck/internal/matcher"
+	"github.com/saurabhsharma2u/botcheck/internal/registry"
 )
 
 func TestScanCmd(t *testing.T) {
@@ -86,5 +86,56 @@ func TestScanCmdMissingFile(t *testing.T) {
 
 	if err := rootCmd.ExecuteContext(context.Background()); err == nil {
 		t.Error("expected error for missing log file, got nil")
+	}
+}
+
+func TestScanCmdStdin(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("XDG_CACHE_HOME", tmp)
+
+	reg := registry.NewDiskRegistry("")
+	entries := []registry.Entry{
+		{Prefix: "1.1.1.1/32", Meta: matcher.Meta{Source: "test"}},
+	}
+	stats := registry.Stats{TotalPrefixes: 1, Sources: map[string]int{"test": 1}}
+	if err := reg.SaveRaw(context.Background(), entries, stats); err != nil {
+		t.Fatal(err)
+	}
+
+	inFile := filepath.Join(tmp, "in.log")
+	if err := os.WriteFile(inFile, []byte("1.1.1.1 - -\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	in, err := os.Open(inFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = in.Close() }()
+
+	oldStdin, oldStdout := os.Stdin, os.Stdout
+	rOut, wOut, _ := os.Pipe()
+	os.Stdin, os.Stdout = in, wOut
+	defer func() {
+		os.Stdin, os.Stdout = oldStdin, oldStdout
+	}()
+
+	rootCmd.SetArgs([]string{"scan", "-", "--quiet"})
+	defer rootCmd.SetArgs(nil)
+
+	var bufOut bytes.Buffer
+	drained := make(chan struct{})
+	go func() {
+		_, _ = io.Copy(&bufOut, rOut)
+		close(drained)
+	}()
+
+	if err := rootCmd.ExecuteContext(context.Background()); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	_ = wOut.Close()
+	<-drained
+
+	if out := bufOut.String(); !strings.Contains(out, "1.1.1.1") {
+		t.Errorf("expected output to contain 1.1.1.1, got %q", out)
 	}
 }
