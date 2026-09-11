@@ -1,9 +1,9 @@
 # botcheck — Detailed Architecture & Implementation Plan
 
-**Project:** `botcheck`  
-**Language:** Go  
-**Version target:** v1 (Registry + Log Scanning)  
-**Last updated:** 2026-09-11  
+**Project:** `botcheck`
+**Language:** Go
+**Version target:** v1 (Registry + Log Scanning)
+**Last updated:** 2026-09-11
 
 ---
 
