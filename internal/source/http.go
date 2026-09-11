@@ -48,7 +48,7 @@ func (s *httpSource) Fetch(ctx context.Context) ([]netip.Prefix, matcher.Meta, e
 	if err != nil {
 		return nil, matcher.Meta{}, fmt.Errorf("do request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, matcher.Meta{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)

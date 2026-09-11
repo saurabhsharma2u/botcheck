@@ -74,13 +74,13 @@ func (r *diskRegistry) Load(ctx context.Context) error {
 		}
 		return fmt.Errorf("open data: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	gr, err := gzip.NewReader(f)
 	if err != nil {
 		return fmt.Errorf("gzip reader: %w", err)
 	}
-	defer gr.Close()
+	defer func() { _ = gr.Close() }()
 
 	dec := json.NewDecoder(gr)
 	var entries []Entry
@@ -115,15 +115,17 @@ func (r *diskRegistry) SaveRaw(ctx context.Context, entries []Entry, stats Stats
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	gw := gzip.NewWriter(f)
 	enc := json.NewEncoder(gw)
 	if err := enc.Encode(entries); err != nil {
-		gw.Close()
+		_ = gw.Close()
 		return err
 	}
-	gw.Close()
+	if err := gw.Close(); err != nil {
+		return err
+	}
 
 	// save manifest
 	man := Manifest{

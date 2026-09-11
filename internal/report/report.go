@@ -2,9 +2,9 @@ package report
 
 import (
 	"fmt"
-	"io"
 	"github.com/saurabhsharma2u/iambot/internal/logparse"
 	"github.com/saurabhsharma2u/iambot/internal/matcher"
+	"io"
 )
 
 type Result struct {

@@ -33,7 +33,7 @@ func TestScanCmd(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	wOut.Close()
+	_ = wOut.Close()
 	var bufOut bytes.Buffer
 	_, _ = io.Copy(&bufOut, rOut)
 

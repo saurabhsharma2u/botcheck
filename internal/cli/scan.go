@@ -104,7 +104,9 @@ var scanCmd = &cobra.Command{
 			if err := scanner.Err(); err != nil {
 				fmt.Fprintf(os.Stderr, "Error reading %s: %v\n", filename, err)
 			}
-			f.Close()
+			if err := f.Close(); err != nil {
+				fmt.Fprintf(os.Stderr, "Error closing %s: %v\n", filename, err)
+			}
 		}
 
 		return nil
