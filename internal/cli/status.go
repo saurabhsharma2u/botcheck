@@ -21,12 +21,16 @@ var statusCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		var cacheDir string
+		var cacheDir, registryURL string
 		cfg, err := config.Load(configPath)
 		if err == nil {
 			cacheDir = cfg.CacheDir
-		} else if !errors.Is(err, os.ErrNotExist) {
-			fmt.Printf("Warning: failed to load config: %v\n", err)
+			registryURL = cfg.ResolvedRegistryURL()
+		} else {
+			if !errors.Is(err, os.ErrNotExist) {
+				fmt.Printf("Warning: failed to load config: %v\n", err)
+			}
+			registryURL = (&config.Config{}).ResolvedRegistryURL()
 		}
 
 		reg := registry.NewDiskRegistry(cacheDir)
@@ -36,6 +40,10 @@ var statusCmd = &cobra.Command{
 
 		stats := reg.Stats()
 		fmt.Printf("Registry Status:\n")
+		fmt.Printf("  Registry:       %s\n", registryURL)
+		if stats.DataVersion != "" {
+			fmt.Printf("  Data Version:   %s\n", stats.DataVersion)
+		}
 		fmt.Printf("  Last Updated:   %s\n", stats.LastUpdated.Format("2006-01-02 15:04:05"))
 		fmt.Printf("  Total Prefixes: %d\n", stats.TotalPrefixes)
 

@@ -17,66 +17,38 @@ go install github.com/saurabhsharma2u/iambot/cmd/botcheck@latest
 
 ## Configuration
 
-Create a `botcheck.yaml` file:
+No config needed to start: `botcheck update` fetches the curated registry
+(`registry/manifest.yaml` on `main`: Googlebot, Bingbot, Applebot, OpenAI,
+Anthropic, Perplexity, DuckDuckGo, Ahrefs, Meta and more).
+`botcheck status` shows what's loaded, including the data version.
+Offline with a populated cache, `update` keeps the last-good data.
+
+To customize, create a `botcheck.yaml` file:
 
 ```yaml
 cache_dir: "/tmp/botcheck-cache"
 
+# Pin the registry (branch, tag, or SHA; default main) or point at a mirror.
+registry_ref: "main"
+# registry_url: "off"  # disable registry, local sources only
+
+# Split large setups across files (paths/globs, relative to this file).
+imports:
+  - sources.d/*.yaml
+
 sources:
-  - name: googlebot
-    category: search
+  # Local entries override registry ones on duplicate `name`.
+  - name: my-custom-list
+    category: monitoring
     type: http
-    url: https://developers.google.com/static/search/apis/ipranges/googlebot.json
+    url: https://example.com/bot-ips.json
     enabled: true
-  - name: google-common-crawlers
-    category: search
-    type: http
-    url: https://developers.google.com/static/crawling/ipranges/common-crawlers.json
-    enabled: true
-  - name: google-user-triggered-fetchers
-    category: fetch
-    type: http
-    url: https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers.json
-    enabled: true
-  - name: openai-chatgpt-user
-    category: ai
-    type: http
-    url: https://openai.com/chatgpt-user.json
-    enabled: true
-  - name: openai-searchbot
-    category: ai
-    type: http
-    url: https://openai.com/searchbot.json
-    enabled: true
-  - name: duckduckgo-duckduckbot
-    category: search
-    type: http
-    url: https://duckduckgo.com/duckduckbot.json
-    enabled: true
-  - name: bingbot
-    category: search
-    type: http
-    url: https://www.bing.com/toolbox/bingbot.json
-    enabled: true
-  - name: anthropic-claude
-    category: ai
-    type: http
-    url: https://claude.com/crawling/bots.json
-    enabled: true
-  - name: perplexity-user
-    category: ai
-    type: http
-    url: https://www.perplexity.ai/perplexity-user.json
-    enabled: true
-  - name: ahrefs
-    category: seo
-    type: http
-    url: https://api.ahrefs.com/v3/public/crawler-ips
-    enabled: true
-  - name: applebot
-    category: search
-    type: http
-    url: https://search.developer.apple.com/applebot.json
+
+  # Or a maintained local file (one CIDR/IP per line, # comments allowed).
+  - name: facebook
+    category: social
+    type: file
+    path: /path/to/meta-prefixes.txt
     enabled: true
 ```
 

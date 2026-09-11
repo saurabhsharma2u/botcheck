@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/netip"
+	"strings"
 	"time"
 
 	"github.com/saurabhsharma2u/iambot/internal/matcher"
@@ -60,21 +61,6 @@ func (s *httpSource) Fetch(ctx context.Context) ([]netip.Prefix, matcher.Meta, e
 	}
 
 	var prefixes []netip.Prefix
-
-	// parsePrefixOrAddr accepts a CIDR prefix or a bare IP (treated as /32 or /128).
-	parsePrefixOrAddr := func(s string) (netip.Prefix, bool) {
-		if parsed, err := netip.ParsePrefix(s); err == nil {
-			return parsed, true
-		}
-		if addr, err := netip.ParseAddr(s); err == nil {
-			bits := 128
-			if addr.Is4() {
-				bits = 32
-			}
-			return netip.PrefixFrom(addr, bits), true
-		}
-		return netip.Prefix{}, false
-	}
 
 	// Try extracting Google bot format first.
 	var gFormat struct {
@@ -133,8 +119,28 @@ func (s *httpSource) Fetch(ctx context.Context) ([]netip.Prefix, matcher.Meta, e
 		}
 	}
 
+	// Plain-text fallback, one CIDR or IP per line (# and ; comments skipped).
 	if len(prefixes) == 0 {
-		return nil, matcher.Meta{}, fmt.Errorf("unsupported json format or no prefixes found for %s", s.url)
+		for _, line := range strings.Split(string(b), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") {
+				continue
+			}
+			if i := strings.IndexAny(line, "#;"); i != -1 {
+				line = strings.TrimSpace(line[:i])
+			}
+			for _, field := range strings.FieldsFunc(line, func(r rune) bool {
+				return r == ',' || r == ' ' || r == '\t'
+			}) {
+				if parsed, ok := parsePrefixOrAddr(strings.TrimSpace(field)); ok {
+					prefixes = append(prefixes, parsed)
+				}
+			}
+		}
+	}
+
+	if len(prefixes) == 0 {
+		return nil, matcher.Meta{}, fmt.Errorf("unsupported format or no prefixes found for %s", s.url)
 	}
 
 	meta := matcher.Meta{

@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -62,5 +64,115 @@ func TestHTTPFetchBareIPList(t *testing.T) {
 
 	if prefixes[1].String() != "2001:db8::1/128" {
 		t.Errorf("expected 2001:db8::1/128, got %s", prefixes[1])
+	}
+}
+
+func TestHTTPFetchPlainText(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("# comment\n\n31.13.24.0/21\n157.240.0.35\nnot-an-ip\n"))
+	}))
+	defer ts.Close()
+
+	s := NewHTTP("facebook", "social", ts.URL)
+	prefixes, _, err := s.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(prefixes) != 2 {
+		t.Fatalf("expected 2 prefixes, got %d (%v)", len(prefixes), prefixes)
+	}
+	if prefixes[0].String() != "31.13.24.0/21" {
+		t.Errorf("expected 31.13.24.0/21, got %s", prefixes[0])
+	}
+	if prefixes[1].String() != "157.240.0.35/32" {
+		t.Errorf("expected 157.240.0.35/32, got %s", prefixes[1])
+	}
+}
+
+func TestFacebookRegistryFile(t *testing.T) {
+	content, err := os.ReadFile("../../registry/meta/fb.txt")
+	if err != nil {
+		t.Fatalf("read fb.txt: %v", err)
+	}
+
+	seen := make(map[string]bool)
+	count := 0
+	for _, line := range strings.Split(string(content), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		if _, ok := parsePrefixOrAddr(line); !ok {
+			t.Errorf("unparseable line: %q", line)
+		}
+		if seen[line] {
+			t.Errorf("duplicate line: %q", line)
+		}
+		seen[line] = true
+		count++
+	}
+
+	if count < 1000 {
+		t.Errorf("expected 1000+ prefixes in fb.txt, got %d", count)
+	}
+
+	for _, want := range []string{"31.13.24.0/21", "2a03:2880::/32", "57.144.0.0/14"} {
+		if !seen[want] {
+			t.Errorf("expected %q in fb.txt, missing", want)
+		}
+	}
+	for _, absent := range []string{"157.240.4.0/24", "2a03:2881:1d::/48", "2a03:2880:f249::/48"} {
+		if seen[absent] {
+			t.Errorf("expected %q absent from fb.txt, present", absent)
+		}
+	}
+}
+
+func TestFileFetch(t *testing.T) {
+	content := `# Meta crawler ranges (maintained list)
+69.63.176.0/20
+66.220.144.0/20, 69.63.184.0/21
+31.13.64.0 ; legacy block
+157.240.0.35
+
+# empty lines and junk are skipped
+not-an-ip
+`
+	f, err := os.CreateTemp("", "botcheck-file-*.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Remove(f.Name()) }()
+	if _, err := f.WriteString(content); err != nil {
+		t.Fatal(err)
+	}
+	_ = f.Close()
+
+	s := NewFile("facebook", "social", f.Name())
+	prefixes, meta, err := s.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if meta.Source != "facebook" {
+		t.Errorf("expected facebook, got %s", meta.Source)
+	}
+
+	want := map[string]bool{
+		"69.63.176.0/20":  false,
+		"66.220.144.0/20": false,
+		"69.63.184.0/21":  false,
+		"31.13.64.0/32":   false,
+		"157.240.0.35/32": false,
+	}
+	if len(prefixes) != len(want) {
+		t.Fatalf("expected %d prefixes, got %d (%v)", len(want), len(prefixes), prefixes)
+	}
+	for _, p := range prefixes {
+		if _, ok := want[p.String()]; !ok {
+			t.Errorf("unexpected prefix %s", p)
+		}
 	}
 }

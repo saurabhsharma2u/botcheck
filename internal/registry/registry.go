@@ -12,6 +12,7 @@ type Stats struct {
 	TotalPrefixes int            `json:"total_prefixes"`
 	Sources       map[string]int `json:"sources"`
 	Categories    map[string]int `json:"categories"`
+	DataVersion   string         `json:"data_version,omitempty"`
 	LastUpdated   time.Time      `json:"last_updated"`
 }
 

@@ -1,4 +1,4 @@
-.PHONY: all build test lint fmt vet clean
+.PHONY: all build test bench lint fmt vet clean
 
 all: lint test build
 
@@ -7,6 +7,9 @@ build:
 
 test:
 	go test -v -race ./...
+
+bench:
+	go test -run=NONE -bench=. -benchmem ./internal/...
 
 lint:
 	golangci-lint run ./...

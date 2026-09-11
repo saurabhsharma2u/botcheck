@@ -279,81 +279,24 @@ botcheck version
 ```yaml
 cache_dir: ""          # empty = use XDG_CACHE_HOME
 
+# Split setups across files (paths/globs, relative to this file).
+# Duplicate `name`s: this file wins over imports.
+imports:
+  - sources.d/*.yaml
+
 sources:
-  - name: googlebot
-    category: search
+  - name: my-custom-list
+    category: monitoring
     type: http
-    url: https://developers.google.com/static/search/apis/ipranges/googlebot.json
+    url: https://example.com/bot-ips.json
     enabled: true
-
-  - name: google-common-crawlers
-    category: search
-    type: http
-    url: https://developers.google.com/static/crawling/ipranges/common-crawlers.json
-    enabled: true
-
-  - name: google-user-triggered-fetchers
-    category: fetch
-    type: http
-    url: https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers.json
-    enabled: true
-
-  - name: openai-chatgpt-user
-    category: ai
-    type: http
-    url: https://openai.com/chatgpt-user.json
-    enabled: true
-
-  - name: openai-searchbot
-    category: ai
-    type: http
-    url: https://openai.com/searchbot.json
-    enabled: true
-
-  - name: duckduckgo-duckduckbot
-    category: search
-    type: http
-    url: https://duckduckgo.com/duckduckbot.json
-    enabled: true
-
-  - name: bingbot
-    category: search
-    type: http
-    url: https://www.bing.com/toolbox/bingbot.json
-    enabled: true
-
-  - name: anthropic-claude
-    category: ai
-    type: http
-    url: https://claude.com/crawling/bots.json
-    enabled: true
-
-  - name: perplexity-user
-    category: ai
-    type: http
-    url: https://www.perplexity.ai/perplexity-user.json
-    enabled: true
-
-  - name: ahrefs
-    category: seo
-    type: http
-    url: https://api.ahrefs.com/v3/public/crawler-ips
-    enabled: true
-
-  - name: applebot
-    category: search
-    type: http
-    url: https://search.developer.apple.com/applebot.json
-    enabled: true
-
-  - name: openai-gptbot
-    category: ai
-    type: http
-    url: https://openai.com/gptbot.json
-    enabled: true
-
-  # Add more official sources here
 ```
+
+The curated registry lives in `registry/manifest.yaml` (fetched at runtime
+from `registry_url`, default `main`). Add a new upstream list there — no
+binary release needed. User overrides stay in `botcheck.yaml` / `imports:`;
+local entries win over registry ones on duplicate `name`. Offline with a
+populated cache, `update` keeps last-good data and `status` shows its age.
 
 Adding a new source should require **only** a config change in the vast majority of cases.
 

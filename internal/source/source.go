@@ -12,3 +12,17 @@ type Source interface {
 	Category() string
 	Fetch(ctx context.Context) ([]netip.Prefix, matcher.Meta, error)
 }
+
+func parsePrefixOrAddr(s string) (netip.Prefix, bool) {
+	if parsed, err := netip.ParsePrefix(s); err == nil {
+		return parsed, true
+	}
+	if addr, err := netip.ParseAddr(s); err == nil {
+		bits := 128
+		if addr.Is4() {
+			bits = 32
+		}
+		return netip.PrefixFrom(addr, bits), true
+	}
+	return netip.Prefix{}, false
+}

@@ -99,9 +99,6 @@ func (r *diskRegistry) Load(ctx context.Context) error {
 	return nil
 }
 
-// We change the signature slightly conceptually: Registry should accept the raw data so it can save it,
-// instead of trying to iterate the Matcher.
-// Alternatively we pass entries directly.
 func (r *diskRegistry) SaveRaw(ctx context.Context, entries []Entry, stats Stats) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -155,7 +152,6 @@ func (r *diskRegistry) SaveRaw(ctx context.Context, entries []Entry, stats Stats
 	return nil
 }
 
-// Not used, using SaveRaw instead
 func (r *diskRegistry) Save(ctx context.Context, m matcher.Matcher, stats Stats) error {
 	return fmt.Errorf("use SaveRaw instead")
 }
