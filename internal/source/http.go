@@ -20,6 +20,8 @@ type httpSource struct {
 	client   *http.Client
 }
 
+const maxFeedBytes = 5 << 20
+
 func NewHTTP(name, category, url string) Source {
 	return &httpSource{
 		name:     name,
@@ -55,9 +57,12 @@ func (s *httpSource) Fetch(ctx context.Context) ([]netip.Prefix, matcher.Meta, e
 		return nil, matcher.Meta{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	b, err := io.ReadAll(resp.Body)
+	b, err := io.ReadAll(io.LimitReader(resp.Body, maxFeedBytes+1))
 	if err != nil {
 		return nil, matcher.Meta{}, fmt.Errorf("read response: %w", err)
+	}
+	if len(b) > maxFeedBytes {
+		return nil, matcher.Meta{}, fmt.Errorf("response exceeds %d bytes for %s", maxFeedBytes, s.url)
 	}
 
 	var prefixes []netip.Prefix

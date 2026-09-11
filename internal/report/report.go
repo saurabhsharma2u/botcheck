@@ -15,6 +15,7 @@ type Result struct {
 
 type Reporter interface {
 	Report(w io.Writer, res Result) error
+	Flush() error
 }
 
 func GetReporter(format string) (Reporter, error) {

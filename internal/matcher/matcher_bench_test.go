@@ -23,7 +23,7 @@ func BenchmarkLookupHit(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, ok := m.Lookup(ip); !ok {
+		if _, _, ok := m.Lookup(ip); !ok {
 			b.Fatal("expected hit")
 		}
 	}
@@ -35,7 +35,7 @@ func BenchmarkLookupMiss(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, ok := m.Lookup(ip); ok {
+		if _, _, ok := m.Lookup(ip); ok {
 			b.Fatal("expected miss")
 		}
 	}

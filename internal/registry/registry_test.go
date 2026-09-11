@@ -2,6 +2,7 @@ package registry
 
 import (
 	"context"
+	"errors"
 	"net/netip"
 	"path/filepath"
 	"testing"
@@ -9,14 +10,20 @@ import (
 	"github.com/saurabhsharma2u/iambot/internal/matcher"
 )
 
+func TestDiskRegistryEmpty(t *testing.T) {
+	r := NewDiskRegistry(filepath.Join(t.TempDir(), "missing"))
+	if err := r.Load(context.Background()); !errors.Is(err, ErrEmpty) {
+		t.Fatalf("expected ErrEmpty, got %v", err)
+	}
+}
+
 func TestDiskRegistry(t *testing.T) {
 	tmp := t.TempDir()
 	cacheDir := filepath.Join(tmp, "botcheck-test")
 
 	r := NewDiskRegistry(cacheDir)
-	err := r.Load(context.Background())
-	if err != nil {
-		t.Fatal(err)
+	if err := r.Load(context.Background()); !errors.Is(err, ErrEmpty) {
+		t.Fatalf("expected ErrEmpty on fresh dir, got %v", err)
 	}
 
 	entries := []Entry{
@@ -32,7 +39,7 @@ func TestDiskRegistry(t *testing.T) {
 		Sources:       map[string]int{"test": 1},
 	}
 
-	err = r.SaveRaw(context.Background(), entries, stats)
+	err := r.SaveRaw(context.Background(), entries, stats)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,6 +58,9 @@ func TestDiskRegistry(t *testing.T) {
 	}
 	if hit.Meta.Source != "test" {
 		t.Fatalf("expected test, got %s", hit.Meta.Source)
+	}
+	if hit.Prefix.String() != "192.168.1.0/24" {
+		t.Fatalf("expected prefix 192.168.1.0/24, got %s", hit.Prefix)
 	}
 
 	s := r2.Stats()

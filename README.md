@@ -1,79 +1,77 @@
 # botcheck
 
-A high-performance IP prefix matcher and log scanner for known bot / crawler IPs.
+Find known bots in your logs. `botcheck` matches visitor IPs against a
+curated registry of verified crawler ranges — Googlebot, Bingbot, GPTBot,
+Applebot, Meta and more — at ~1M log lines per second.
 
-## Features
-
-- Fast IP matching using longest prefix match (`netip` and `bart` trie).
-- Maintains a local registry of known IP lists (e.g. Googlebot, Bingbot).
-- Scans common log formats (Nginx/Apache, JSON) to check for bots.
-- Flexible outputs (Text, JSON, CSV).
-
-## Installation
+## Quick start
 
 ```bash
 go install github.com/saurabhsharma2u/iambot/cmd/botcheck@latest
+
+botcheck update
+botcheck scan /var/log/nginx/access.log --only-matched
 ```
 
-## Configuration
+That's it — no config needed. `update` fetches the curated registry,
+`scan` prints every log line that came from a known bot:
 
-No config needed to start: `botcheck update` fetches the curated registry
-(`registry/manifest.yaml` on `main`: Googlebot, Bingbot, Applebot, OpenAI,
-Anthropic, Perplexity, DuckDuckGo, Ahrefs, Meta and more).
-`botcheck status` shows what's loaded, including the data version.
-Offline with a populated cache, `update` keeps the last-good data.
+```
+[MATCH] 40.77.167.61 bingbot
+[MATCH] 66.249.79.132 google-common-crawlers
+```
 
-To customize, create a `botcheck.yaml` file:
+## Commands
+
+| Command | What it does |
+|---|---|
+| `botcheck update` | Download the latest bot IP ranges into the local cache |
+| `botcheck check 40.77.167.61` | Check a single IP (`--json` for machine output) |
+| `botcheck scan access.log` | Check every IP in a log file (`--only-matched`, `--output text\|json\|csv`, `--format nginx\|apache\|json\|cloudflare`) |
+| `botcheck status` | Show loaded sources, data version, and totals |
+| `botcheck --version` | Print the version |
+
+## Covered bots
+
+**Search:** Googlebot, Google common crawlers, Bingbot, DuckDuckBot, Applebot ·
+**Fetch:** Google user-triggered fetchers ·
+**AI:** ChatGPT-User, OpenAI SearchBot, Claude, Perplexity ·
+**SEO / Social:** Ahrefs, Facebook/Meta
+
+Run `botcheck status` for live counts per source.
+
+## Custom sources
+
+Create `botcheck.yaml` to add your own lists or pin the registry:
 
 ```yaml
 cache_dir: "/tmp/botcheck-cache"
-
-# Pin the registry (branch, tag, or SHA; default main) or point at a mirror.
-registry_ref: "main"
-# registry_url: "off"  # disable registry, local sources only
-
-# Split large setups across files (paths/globs, relative to this file).
-imports:
-  - sources.d/*.yaml
+registry_ref: "main"   # pin registry to a tag/SHA, or "off" to disable it
 
 sources:
-  # Local entries override registry ones on duplicate `name`.
-  - name: my-custom-list
+  - name: my-list
     category: monitoring
-    type: http
-    url: https://example.com/bot-ips.json
+    type: http                       # JSON feed or plain-text CIDR list
+    url: https://example.com/bots.txt
     enabled: true
 
-  # Or a maintained local file (one CIDR/IP per line, # comments allowed).
-  - name: facebook
-    category: social
-    type: file
-    path: /path/to/meta-prefixes.txt
+  - name: internal
+    category: monitoring
+    type: file                        # local file, one CIDR/IP per line
+    path: ./internal-ranges.txt
     enabled: true
 ```
 
-## Usage
+Your entries override registry ones with the same `name`. Large setups can
+split across files with `imports: ["sources.d/*.yaml"]`.
 
-Update the registry:
-```bash
-botcheck update
-```
+## How it works
 
-Check the registry status:
-```bash
-botcheck status
-```
-
-Check a single IP:
-```bash
-botcheck check 192.168.1.1
-```
-
-Scan log files:
-```bash
-botcheck scan access.log --format auto --output text
-botcheck scan access.log --only-matched --output json
-```
+1. `update` fetches the registry manifest plus each feed, and builds a
+   longest-prefix-match trie cached under `~/.cache/botcheck/`.
+2. `scan`/`check` parse IPs and look them up locally — no network, no API keys.
+3. Offline with a populated cache, `update` keeps last-good data instead of failing.
 
 ## License
+
 Apache-2.0

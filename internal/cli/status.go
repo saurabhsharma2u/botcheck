@@ -11,7 +11,6 @@ import (
 )
 
 func init() {
-	statusCmd.Flags().StringVarP(&configPath, "config", "c", "botcheck.yaml", "Path to config file")
 	rootCmd.AddCommand(statusCmd)
 }
 
@@ -28,13 +27,16 @@ var statusCmd = &cobra.Command{
 			registryURL = cfg.ResolvedRegistryURL()
 		} else {
 			if !errors.Is(err, os.ErrNotExist) {
-				fmt.Printf("Warning: failed to load config: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Warning: failed to load config: %v\n", err)
 			}
 			registryURL = (&config.Config{}).ResolvedRegistryURL()
 		}
 
 		reg := registry.NewDiskRegistry(cacheDir)
 		if err := reg.Load(ctx); err != nil {
+			if errors.Is(err, registry.ErrEmpty) {
+				return err
+			}
 			return fmt.Errorf("load registry: %w", err)
 		}
 

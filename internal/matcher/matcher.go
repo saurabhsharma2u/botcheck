@@ -22,13 +22,12 @@ type Hit struct {
 
 type Matcher interface {
 	Insert(prefix netip.Prefix, meta Meta)
-	Lookup(ip netip.Addr) (Meta, bool)
+	Lookup(ip netip.Addr) (netip.Prefix, Meta, bool)
 	Len() int
 }
 
 type bartMatcher struct {
 	trie *bart.Table[Meta]
-	len  int
 }
 
 func New() Matcher {
@@ -39,14 +38,20 @@ func New() Matcher {
 
 func (m *bartMatcher) Insert(prefix netip.Prefix, meta Meta) {
 	m.trie.Insert(prefix, meta)
-	m.len++
 }
 
-func (m *bartMatcher) Lookup(ip netip.Addr) (Meta, bool) {
-	meta, ok := m.trie.Lookup(ip)
-	return meta, ok
+func (m *bartMatcher) Lookup(ip netip.Addr) (netip.Prefix, Meta, bool) {
+	if !ip.IsValid() {
+		return netip.Prefix{}, Meta{}, false
+	}
+	ip = ip.WithZone("").Unmap()
+	bits := 128
+	if ip.Is4() {
+		bits = 32
+	}
+	return m.trie.LookupPrefixLPM(netip.PrefixFrom(ip, bits))
 }
 
 func (m *bartMatcher) Len() int {
-	return m.len
+	return m.trie.Size()
 }

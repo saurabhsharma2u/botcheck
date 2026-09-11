@@ -18,6 +18,10 @@ func (r *TextReporter) Report(w io.Writer, res Result) error {
 		src = res.Hit.Meta.Source
 	}
 
-	_, err := fmt.Fprintf(w, "[%s] %-15s %s\n", matchStr, res.Entry.IP.String(), src)
+	_, err := fmt.Fprintf(w, "[%s] %s %s\n", matchStr, res.Entry.IP.String(), src)
 	return err
+}
+
+func (r *TextReporter) Flush() error {
+	return nil
 }

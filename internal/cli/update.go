@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 
 	"github.com/saurabhsharma2u/iambot/internal/config"
 	"github.com/saurabhsharma2u/iambot/internal/registry"
@@ -13,12 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	configPath string
-)
-
 func init() {
-	updateCmd.Flags().StringVarP(&configPath, "config", "c", "botcheck.yaml", "Path to config file")
 	rootCmd.AddCommand(updateCmd)
 }
 
@@ -41,7 +37,7 @@ func runUpdate(ctx context.Context, cfgPath string, stdout, stderr io.Writer) er
 	}
 
 	reg := registry.NewDiskRegistry(cfg.CacheDir)
-	if err := reg.Load(ctx); err != nil {
+	if err := reg.Load(ctx); err != nil && !errors.Is(err, registry.ErrEmpty) {
 		return fmt.Errorf("load registry: %w", err)
 	}
 	haveCache := reg.Stats().TotalPrefixes > 0
@@ -80,46 +76,60 @@ func runUpdate(ctx context.Context, cfgPath string, stdout, stderr io.Writer) er
 		DataVersion: dataVersion,
 	}
 
+	var mu sync.Mutex
+	var wg sync.WaitGroup
 	for _, sc := range sources {
 		if !sc.Enabled {
 			continue
 		}
+		wg.Add(1)
+		go func(sc config.SourceConfig) {
+			defer wg.Done()
 
-		loc := sc.URL
-		if sc.Type == "file" {
-			loc = sc.Path
-		}
-		_, _ = fmt.Fprintf(stdout, "Fetching %s (%s)...\n", sc.Name, loc)
+			loc := sc.URL
+			if sc.Type == "file" {
+				loc = sc.Path
+			}
 
-		var src source.Source
-		switch sc.Type {
-		case "http":
-			src = source.NewHTTP(sc.Name, sc.Category, sc.URL)
-		case "file":
-			src = source.NewFile(sc.Name, sc.Category, sc.Path)
-		default:
-			_, _ = fmt.Fprintf(stdout, "Warning: unsupported source type %s for %s\n", sc.Type, sc.Name)
-			continue
-		}
+			var src source.Source
+			switch sc.Type {
+			case "http":
+				src = source.NewHTTP(sc.Name, sc.Category, sc.URL)
+			case "file":
+				src = source.NewFile(sc.Name, sc.Category, sc.Path)
+			default:
+				mu.Lock()
+				_, _ = fmt.Fprintf(stdout, "Warning: unsupported source type %s for %s\n", sc.Type, sc.Name)
+				mu.Unlock()
+				return
+			}
 
-		prefixes, meta, err := src.Fetch(ctx)
-		if err != nil {
-			_, _ = fmt.Fprintf(stdout, "Error fetching %s: %v\n", sc.Name, err)
-			continue
-		}
+			mu.Lock()
+			_, _ = fmt.Fprintf(stdout, "Fetching %s (%s)...\n", sc.Name, loc)
+			mu.Unlock()
 
-		for _, p := range prefixes {
-			allEntries = append(allEntries, registry.Entry{
-				Prefix: p.String(),
-				Meta:   meta,
-			})
-		}
-		stats.TotalPrefixes += len(prefixes)
-		stats.Sources[sc.Name] += len(prefixes)
-		stats.Categories[sc.Category] += len(prefixes)
+			prefixes, meta, err := src.Fetch(ctx)
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				_, _ = fmt.Fprintf(stdout, "Error fetching %s: %v\n", sc.Name, err)
+				return
+			}
 
-		_, _ = fmt.Fprintf(stdout, "  Loaded %d prefixes for %s\n", len(prefixes), sc.Name)
+			for _, p := range prefixes {
+				allEntries = append(allEntries, registry.Entry{
+					Prefix: p.String(),
+					Meta:   meta,
+				})
+			}
+			stats.TotalPrefixes += len(prefixes)
+			stats.Sources[sc.Name] += len(prefixes)
+			stats.Categories[sc.Category] += len(prefixes)
+
+			_, _ = fmt.Fprintf(stdout, "  Loaded %d prefixes for %s\n", len(prefixes), sc.Name)
+		}(sc)
 	}
+	wg.Wait()
 
 	if len(allEntries) == 0 {
 		return fmt.Errorf("no prefixes fetched from any source")

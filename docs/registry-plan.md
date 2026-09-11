@@ -42,8 +42,9 @@ Overlaps kept; longest-prefix match resolves them.
 
 ## Migration from `defaults/`
 
-1. Move the 11 verified sources from `defaults/default-sources.yaml` into
-   `registry/manifest.yaml` as `http` pointers (same name/category/url).
+1. Move the verified sources from `defaults/default-sources.yaml` into
+   `registry/manifest.yaml` as `http` pointers (same name/category/url),
+   plus the `facebook` entry serving `meta/fb.txt` as plain text.
 2. Extract the `ip` values from the Facebook JSON into `registry/meta/fb.txt`
    (dedupe exact duplicates, keep overlaps), add provenance header.
 3. Add the `facebook` entry pointing at the raw GitHub URL of `fb.txt`.
@@ -84,9 +85,9 @@ Overlaps kept; longest-prefix match resolves them.
 - ETag/`If-Modified-Since` polite refetch.
 - Per-source refresh intervals.
 
-## Order of work
+## Order of work (implemented)
 
-1. `registry/manifest.yaml` (11 pointers) + `registry/meta/fb.txt`.
+1. `registry/manifest.yaml` (12 entries: 11 pointers + facebook) + `registry/meta/fb.txt`.
 2. Client: config knobs → manifest fetch + merge → remove embed logic.
 3. `status` age display + CODEOWNERS.
 4. Tests + docs (README points at `registry/`, not `defaults/`).

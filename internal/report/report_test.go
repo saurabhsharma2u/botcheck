@@ -24,7 +24,7 @@ func TestTextReporter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := "[MATCH] 1.1.1.1         cloudflare\n"
+	expected := "[MATCH] 1.1.1.1 cloudflare\n"
 	if buf.String() != expected {
 		t.Errorf("expected %q, got %q", expected, buf.String())
 	}

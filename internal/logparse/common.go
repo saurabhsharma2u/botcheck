@@ -5,10 +5,8 @@ import (
 	"net/netip"
 	"strconv"
 	"strings"
+	"time"
 )
-
-// A simplistic common log format parser for Apache/Nginx combined logs.
-// Format typically: IP - user [time] "method path proto" status bytes "referer" "UA"
 
 type commonParser struct{}
 
@@ -23,33 +21,89 @@ func (p *commonParser) Name() string {
 func (p *commonParser) Parse(line string) (Entry, error) {
 	e := Entry{Raw: line}
 
-	// Extremely naive parsing for speed and simplicity in v1.
-	// Real implementation should use a proper regex or state machine.
-	parts := strings.SplitN(line, " ", 2)
-	if len(parts) < 2 {
+	ipStr, rest, found := strings.Cut(line, " ")
+	if !found {
 		return e, fmt.Errorf("invalid format")
 	}
-
-	ip, err := netip.ParseAddr(parts[0])
+	ip, err := netip.ParseAddr(ipStr)
 	if err != nil {
-		return e, fmt.Errorf("parse IP: %w", err)
+		if trimmed, ok := strings.CutPrefix(ipStr, "["); ok {
+			if end := strings.IndexByte(trimmed, ']'); end != -1 {
+				ip, err = netip.ParseAddr(trimmed[:end])
+			}
+		}
+		if err != nil {
+			return e, fmt.Errorf("parse IP: %w", err)
+		}
 	}
 	e.IP = ip
 
-	// For v1, we won't fully parse all fields of Apache log, just need IP.
-	// We'll try to extract UA and Status if possible loosely.
-
-	if statusIdx := strings.LastIndex(line, "\" "); statusIdx != -1 {
-		statusParts := strings.Split(line[statusIdx+2:], " ")
-		if len(statusParts) >= 2 {
-			if s, err := strconv.Atoi(statusParts[0]); err == nil {
-				e.Status = s
+	if i := strings.IndexByte(rest, '['); i != -1 {
+		if j := strings.IndexByte(rest[i:], ']'); j != -1 {
+			if ts, err := time.Parse("02/Jan/2006:15:04:05 -0700", rest[i+1:i+j]); err == nil {
+				e.Timestamp = ts
 			}
-			if b, err := strconv.ParseInt(statusParts[1], 10, 64); err == nil {
-				e.Bytes = b
-			}
+			rest = rest[i+j+1:]
 		}
 	}
 
+	if i := strings.IndexByte(rest, '"'); i != -1 {
+		rest = rest[i+1:]
+		if j := strings.IndexByte(rest, '"'); j != -1 {
+			if req := rest[:j]; req != "-" {
+				parts := strings.SplitN(req, " ", 3)
+				if len(parts) > 0 {
+					e.Method = parts[0]
+				}
+				if len(parts) > 1 {
+					e.Path = parts[1]
+				}
+			}
+			rest = rest[j+1:]
+		}
+	}
+
+	fields := strings.Fields(rest)
+	if len(fields) > 0 && fields[0] != "-" {
+		if s, err := strconv.Atoi(fields[0]); err == nil {
+			e.Status = s
+		}
+	}
+	if len(fields) > 1 && fields[1] != "-" {
+		if b, err := strconv.ParseInt(fields[1], 10, 64); err == nil {
+			e.Bytes = b
+		}
+	}
+
+	referer, ua := quotedPair(rest)
+	if referer != "-" {
+		e.Referer = referer
+	}
+	if ua != "-" {
+		e.UA = ua
+	}
 	return e, nil
+}
+
+func quotedPair(s string) (first, second string) {
+	i := strings.IndexByte(s, '"')
+	if i == -1 {
+		return "", ""
+	}
+	s = s[i+1:]
+	j := strings.IndexByte(s, '"')
+	if j == -1 {
+		return "", ""
+	}
+	first = s[:j]
+	s = s[j+1:]
+	i = strings.IndexByte(s, '"')
+	if i == -1 {
+		return first, ""
+	}
+	s = s[i+1:]
+	if j := strings.IndexByte(s, '"'); j != -1 {
+		return first, s[:j]
+	}
+	return first, s
 }

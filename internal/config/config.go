@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,6 +41,9 @@ func Load(path string) (*Config, error) {
 	if err := yaml.Unmarshal(b, &cfg); err != nil {
 		return nil, fmt.Errorf("parse config file: %w", err)
 	}
+	if err := cfg.validate(path); err != nil {
+		return nil, err
+	}
 	if err := cfg.resolveImports(path, make(map[string]bool)); err != nil {
 		return nil, err
 	}
@@ -62,6 +66,35 @@ func (c *Config) ResolvedRegistryURL() string {
 // MergeSources layers overlay on top of base; overlay wins on duplicate names.
 func MergeSources(base, overlay []SourceConfig) []SourceConfig {
 	return dedupeSources(append(base, overlay...))
+}
+
+func (c *Config) validate(origin string) error {
+	seen := make(map[string]bool, len(c.Sources))
+	for _, s := range c.Sources {
+		if s.Name == "" {
+			return fmt.Errorf("%s: source with empty name", origin)
+		}
+		if seen[s.Name] {
+			return fmt.Errorf("%s: duplicate source %q", origin, s.Name)
+		}
+		seen[s.Name] = true
+		switch s.Type {
+		case "http":
+			if s.URL == "" {
+				return fmt.Errorf("%s: source %q: http requires url", origin, s.Name)
+			}
+			if _, err := url.ParseRequestURI(s.URL); err != nil {
+				return fmt.Errorf("%s: source %q: invalid url: %w", origin, s.Name, err)
+			}
+		case "file":
+			if s.Path == "" {
+				return fmt.Errorf("%s: source %q: file requires path", origin, s.Name)
+			}
+		default:
+			return fmt.Errorf("%s: source %q: unsupported type %q", origin, s.Name, s.Type)
+		}
+	}
+	return nil
 }
 
 // resolveImports merges `imports:` files underneath this file's sources;
@@ -92,6 +125,9 @@ func (c *Config) resolveImports(parent string, visited map[string]bool) error {
 			var sub Config
 			if err := yaml.Unmarshal(b, &sub); err != nil {
 				return fmt.Errorf("parse import %q: %w", m, err)
+			}
+			if err := sub.validate(m); err != nil {
+				return err
 			}
 			if err := sub.resolveImports(m, visited); err != nil {
 				return err

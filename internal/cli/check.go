@@ -15,7 +15,6 @@ import (
 var jsonOutput bool
 
 func init() {
-	checkCmd.Flags().StringVarP(&configPath, "config", "c", "botcheck.yaml", "Path to config file")
 	checkCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output in JSON format")
 	rootCmd.AddCommand(checkCmd)
 }
@@ -39,12 +38,15 @@ var checkCmd = &cobra.Command{
 			cacheDir = cfg.CacheDir
 		} else if !errors.Is(err, os.ErrNotExist) {
 			if !jsonOutput {
-				fmt.Printf("Warning: failed to load config: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Warning: failed to load config: %v\n", err)
 			}
 		}
 
 		reg := registry.NewDiskRegistry(cacheDir)
 		if err := reg.Load(ctx); err != nil {
+			if errors.Is(err, registry.ErrEmpty) {
+				return err
+			}
 			return fmt.Errorf("load registry: %w", err)
 		}
 
@@ -56,6 +58,7 @@ var checkCmd = &cobra.Command{
 				"matched": ok,
 			}
 			if ok {
+				out["prefix"] = hit.Prefix.String()
 				out["meta"] = hit.Meta
 			}
 			b, _ := json.MarshalIndent(out, "", "  ")
@@ -65,6 +68,7 @@ var checkCmd = &cobra.Command{
 
 		if ok {
 			fmt.Printf("MATCH: %s\n", ip)
+			fmt.Printf("  Prefix:   %s\n", hit.Prefix)
 			fmt.Printf("  Source:   %s\n", hit.Meta.Source)
 			fmt.Printf("  Category: %s\n", hit.Meta.Category)
 			fmt.Printf("  Name:     %s\n", hit.Meta.Name)

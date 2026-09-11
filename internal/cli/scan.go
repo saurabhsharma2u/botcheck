@@ -22,7 +22,6 @@ var (
 )
 
 func init() {
-	scanCmd.Flags().StringVarP(&configPath, "config", "c", "botcheck.yaml", "Path to config file")
 	scanCmd.Flags().StringVar(&scanFormat, "format", "auto", "Log format (auto|nginx|apache|json|cloudflare)")
 	scanCmd.Flags().StringVar(&scanOutput, "output", "text", "Output format (text|json|csv)")
 	scanCmd.Flags().BoolVar(&scanOnlyMatched, "only-matched", false, "Only output matched IPs")
@@ -49,6 +48,9 @@ var scanCmd = &cobra.Command{
 
 		reg := registry.NewDiskRegistry(cacheDir)
 		if err := reg.Load(ctx); err != nil {
+			if errors.Is(err, registry.ErrEmpty) {
+				return err
+			}
 			return fmt.Errorf("load registry: %w", err)
 		}
 
@@ -62,6 +64,7 @@ var scanCmd = &cobra.Command{
 			return err
 		}
 
+		failed := false
 		for _, filename := range args {
 			if !scanQuiet {
 				fmt.Fprintf(os.Stderr, "Scanning %s...\n", filename)
@@ -70,15 +73,19 @@ var scanCmd = &cobra.Command{
 			f, err := os.Open(filename)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error opening %s: %v\n", filename, err)
+				failed = true
 				continue
 			}
 
 			scanner := bufio.NewScanner(f)
+			scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
+			var skipped int64
 			for scanner.Scan() {
 				line := scanner.Text()
 				entry, err := parser.Parse(line)
 				if err != nil {
-					continue // skip invalid lines
+					skipped++
+					continue
 				}
 
 				hit, matched := reg.Contains(entry.IP)
@@ -98,17 +105,30 @@ var scanCmd = &cobra.Command{
 
 				if err := reporter.Report(os.Stdout, res); err != nil {
 					fmt.Fprintf(os.Stderr, "Error writing report: %v\n", err)
+					failed = true
 				}
 			}
 
 			if err := scanner.Err(); err != nil {
 				fmt.Fprintf(os.Stderr, "Error reading %s: %v\n", filename, err)
+				failed = true
+			}
+			if skipped > 0 {
+				fmt.Fprintf(os.Stderr, "Skipped %d invalid lines in %s\n", skipped, filename)
 			}
 			if err := f.Close(); err != nil {
 				fmt.Fprintf(os.Stderr, "Error closing %s: %v\n", filename, err)
 			}
 		}
 
+		if err := reporter.Flush(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error flushing report: %v\n", err)
+			failed = true
+		}
+
+		if failed {
+			return fmt.Errorf("scan completed with errors")
+		}
 		return nil
 	},
 }

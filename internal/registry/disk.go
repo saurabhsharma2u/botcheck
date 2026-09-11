@@ -53,7 +53,7 @@ func (r *diskRegistry) Load(ctx context.Context) error {
 	b, err := os.ReadFile(mfPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil
+			return ErrEmpty
 		}
 		return fmt.Errorf("read manifest: %w", err)
 	}
@@ -70,7 +70,7 @@ func (r *diskRegistry) Load(ctx context.Context) error {
 	f, err := os.Open(dPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil
+			return ErrEmpty
 		}
 		return fmt.Errorf("open data: %w", err)
 	}
@@ -94,6 +94,9 @@ func (r *diskRegistry) Load(ctx context.Context) error {
 			newM.Insert(prefix, e.Meta)
 		}
 	}
+	if newM.Len() == 0 {
+		return ErrEmpty
+	}
 	r.m = newM
 
 	return nil
@@ -103,28 +106,23 @@ func (r *diskRegistry) SaveRaw(ctx context.Context, entries []Entry, stats Stats
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if err := os.MkdirAll(filepath.Join(r.cacheDir, "data"), 0755); err != nil {
+	dataDir := filepath.Join(r.cacheDir, "data")
+	if err := os.MkdirAll(dataDir, 0700); err != nil {
 		return fmt.Errorf("mkdir: %w", err)
 	}
 
-	// save data
-	f, err := os.Create(r.dataPath())
-	if err != nil {
-		return err
-	}
-	defer func() { _ = f.Close() }()
-
-	gw := gzip.NewWriter(f)
-	enc := json.NewEncoder(gw)
-	if err := enc.Encode(entries); err != nil {
-		_ = gw.Close()
-		return err
-	}
-	if err := gw.Close(); err != nil {
-		return err
+	if err := writeAtomic(r.dataPath(), 0600, func(f *os.File) error {
+		gw := gzip.NewWriter(f)
+		enc := json.NewEncoder(gw)
+		if err := enc.Encode(entries); err != nil {
+			_ = gw.Close()
+			return err
+		}
+		return gw.Close()
+	}); err != nil {
+		return fmt.Errorf("save data: %w", err)
 	}
 
-	// save manifest
 	man := Manifest{
 		Version:   1,
 		UpdatedAt: time.Now(),
@@ -134,8 +132,11 @@ func (r *diskRegistry) SaveRaw(ctx context.Context, entries []Entry, stats Stats
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(r.manifestPath(), b, 0644); err != nil {
+	if err := writeAtomic(r.manifestPath(), 0600, func(f *os.File) error {
+		_, err := f.Write(b)
 		return err
+	}); err != nil {
+		return fmt.Errorf("save manifest: %w", err)
 	}
 
 	r.stats = stats
@@ -152,18 +153,35 @@ func (r *diskRegistry) SaveRaw(ctx context.Context, entries []Entry, stats Stats
 	return nil
 }
 
-func (r *diskRegistry) Save(ctx context.Context, m matcher.Matcher, stats Stats) error {
-	return fmt.Errorf("use SaveRaw instead")
+func writeAtomic(path string, perm os.FileMode, write func(f *os.File) error) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".tmp-*")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+	defer func() { _ = os.Remove(tmpName) }()
+
+	if err := write(tmp); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Chmod(tmpName, perm); err != nil {
+		return err
+	}
+	return os.Rename(tmpName, path)
 }
 
 func (r *diskRegistry) Contains(ip netip.Addr) (matcher.Hit, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	meta, ok := r.m.Lookup(ip)
+	prefix, meta, ok := r.m.Lookup(ip)
 	if !ok {
 		return matcher.Hit{}, false
 	}
-	return matcher.Hit{Meta: meta}, true
+	return matcher.Hit{Prefix: prefix, Meta: meta}, true
 }
 
 func (r *diskRegistry) Stats() Stats {
@@ -176,10 +194,4 @@ func (r *diskRegistry) LastUpdated() time.Time {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return r.stats.LastUpdated
-}
-
-func (r *diskRegistry) Matcher() matcher.Matcher {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	return r.m
 }

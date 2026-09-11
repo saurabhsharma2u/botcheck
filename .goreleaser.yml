@@ -1,0 +1,22 @@
+version: 2
+
+project_name: botcheck
+
+builds:
+  - id: botcheck
+    main: ./cmd/botcheck
+    binary: botcheck
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w
+        -X github.com/saurabhsharma2u/iambot/internal/version.Version={{.Version}}
+        -X github.com/saurabhsharma2u/iambot/internal/version.GitCommit={{.Commit}}
+        -X github.com/saurabhsharma2u/iambot/internal/version.BuildTime={{.Date}}
+
+archives:
+  - id: botcheck
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt

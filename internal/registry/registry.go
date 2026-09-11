@@ -2,11 +2,14 @@ package registry
 
 import (
 	"context"
+	"errors"
 	"net/netip"
 	"time"
 
 	"github.com/saurabhsharma2u/iambot/internal/matcher"
 )
+
+var ErrEmpty = errors.New("registry is empty, run `botcheck update`")
 
 type Stats struct {
 	TotalPrefixes int            `json:"total_prefixes"`
@@ -27,5 +30,4 @@ type Registry interface {
 	Contains(ip netip.Addr) (matcher.Hit, bool)
 	Stats() Stats
 	LastUpdated() time.Time
-	Matcher() matcher.Matcher
 }

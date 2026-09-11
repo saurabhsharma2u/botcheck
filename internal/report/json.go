@@ -24,3 +24,7 @@ func (r *JSONReporter) Report(w io.Writer, res Result) error {
 	_, err = w.Write(append(b, '\n'))
 	return err
 }
+
+func (r *JSONReporter) Flush() error {
+	return nil
+}

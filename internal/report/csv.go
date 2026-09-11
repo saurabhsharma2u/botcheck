@@ -40,6 +40,13 @@ func (r *CSVReporter) Report(w io.Writer, res Result) error {
 	if err := r.w.Write(record); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (r *CSVReporter) Flush() error {
+	if r.w == nil {
+		return nil
+	}
 	r.w.Flush()
 	return r.w.Error()
 }

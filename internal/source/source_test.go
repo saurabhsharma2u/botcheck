@@ -1,10 +1,12 @@
 package source
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -127,6 +129,36 @@ func TestFacebookRegistryFile(t *testing.T) {
 		if seen[absent] {
 			t.Errorf("expected %q absent from fb.txt, present", absent)
 		}
+	}
+}
+
+func TestHTTPFetchTooLarge(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(bytes.Repeat([]byte("x"), maxFeedBytes+10))
+	}))
+	defer ts.Close()
+
+	s := NewHTTP("big", "test", ts.URL)
+	if _, _, err := s.Fetch(context.Background()); err == nil {
+		t.Error("expected error for oversize feed, got nil")
+	}
+}
+
+func TestFileFetchEnvPath(t *testing.T) {
+	dir := t.TempDir()
+	real := filepath.Join(dir, "ranges.txt")
+	if err := os.WriteFile(real, []byte("10.9.0.0/16\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("BOTCHECK_TEST_DIR", dir)
+
+	s := NewFile("env", "test", "$BOTCHECK_TEST_DIR/ranges.txt")
+	prefixes, _, err := s.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(prefixes) != 1 || prefixes[0].String() != "10.9.0.0/16" {
+		t.Errorf("unexpected prefixes: %v", prefixes)
 	}
 }
 

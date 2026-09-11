@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -31,7 +32,7 @@ func (s *fileSource) Category() string {
 }
 
 func (s *fileSource) Fetch(_ context.Context) ([]netip.Prefix, matcher.Meta, error) {
-	f, err := os.Open(s.path)
+	f, err := os.Open(expandPath(s.path))
 	if err != nil {
 		return nil, matcher.Meta{}, fmt.Errorf("open file: %w", err)
 	}
@@ -39,7 +40,7 @@ func (s *fileSource) Fetch(_ context.Context) ([]netip.Prefix, matcher.Meta, err
 
 	var prefixes []netip.Prefix
 	scanner := bufio.NewScanner(f)
-	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
+	scanner.Buffer(make([]byte, 64*1024), 8*1024*1024)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") {
@@ -72,4 +73,13 @@ func (s *fileSource) Fetch(_ context.Context) ([]netip.Prefix, matcher.Meta, err
 	}
 
 	return prefixes, meta, nil
+}
+
+func expandPath(path string) string {
+	if strings.HasPrefix(path, "~/") {
+		if home, err := os.UserHomeDir(); err == nil {
+			path = filepath.Join(home, path[2:])
+		}
+	}
+	return os.ExpandEnv(path)
 }

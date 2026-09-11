@@ -2,20 +2,25 @@ package cli
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/saurabhsharma2u/iambot/internal/version"
 	"github.com/spf13/cobra"
 )
 
+var configPath string
+
 var rootCmd = &cobra.Command{
-	Use:   "botcheck",
-	Short: "botcheck is a tool to manage and check IP addresses against known bot lists",
+	Use:          "botcheck",
+	Short:        "botcheck is a tool to manage and check IP addresses against known bot lists",
+	Version:      version.Version,
+	SilenceUsage: true,
+}
+
+func init() {
+	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "botcheck.yaml", "Path to config file")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute(ctx context.Context) error {
-	if err := rootCmd.ExecuteContext(ctx); err != nil {
-		fmt.Println(err)
-		return err
-	}
-	return nil
+	return rootCmd.ExecuteContext(ctx)
 }
