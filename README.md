@@ -28,6 +28,11 @@ sources:
     type: http
     url: https://developers.google.com/static/search/apis/ipranges/googlebot.json
     enabled: true
+  - name: google-common-crawlers
+    category: search
+    type: http
+    url: https://developers.google.com/static/crawling/ipranges/common-crawlers.json
+    enabled: true
 ```
 
 ## Usage
