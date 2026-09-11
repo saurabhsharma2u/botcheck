@@ -233,7 +233,7 @@ botcheck refresh [--force] [--source NAME] [--config path]
 botcheck status
 botcheck check <IP> [--json]
 botcheck scan <logfile...> [flags]
-  --format      auto|nginx|apache|json|cloudflare
+  --input       auto|nginx|apache|json|cloudflare
   --output      text|json|csv
   --only-matched
   --only-unmatched

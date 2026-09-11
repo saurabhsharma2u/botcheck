@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	scanFormat        string
+	scanInput         string
 	scanOutput        string
 	scanOnlyMatched   bool
 	scanOnlyUnmatched bool
@@ -22,7 +22,7 @@ var (
 )
 
 func init() {
-	scanCmd.Flags().StringVar(&scanFormat, "format", "auto", "Log format (auto|nginx|apache|json|cloudflare)")
+	scanCmd.Flags().StringVar(&scanInput, "input", "auto", "Input log format (auto|nginx|apache|json|cloudflare)")
 	scanCmd.Flags().StringVar(&scanOutput, "output", "text", "Output format (text|json|csv)")
 	scanCmd.Flags().BoolVar(&scanOnlyMatched, "only-matched", false, "Only output matched IPs")
 	scanCmd.Flags().BoolVar(&scanOnlyUnmatched, "only-unmatched", false, "Only output unmatched IPs")
@@ -54,7 +54,7 @@ var scanCmd = &cobra.Command{
 			return fmt.Errorf("load registry: %w", err)
 		}
 
-		parser, err := logparse.GetParser(scanFormat)
+		parser, err := logparse.GetParser(scanInput)
 		if err != nil {
 			return err
 		}

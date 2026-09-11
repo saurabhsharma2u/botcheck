@@ -27,7 +27,7 @@ That's it — no config needed. `update` fetches the curated registry,
 |---|---|
 | `botcheck refresh` | Download the latest bot IP ranges into the local cache |
 | `botcheck check 40.77.167.61` | Check a single IP (`--json` for machine output) |
-| `botcheck scan access.log` | Check every IP in a log file (`--only-matched`, `--output text\|json\|csv`, `--format nginx\|apache\|json\|cloudflare`) |
+| `botcheck scan access.log` | Check every IP in a log file (`--only-matched`, `--output text\|json\|csv`, `--input nginx|apache|json|cloudflare`) |
 | `botcheck status` | Show loaded sources, data version, and totals |
 | `botcheck --version` | Print the version |
 

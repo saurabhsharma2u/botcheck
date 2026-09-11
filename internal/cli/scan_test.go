@@ -45,17 +45,22 @@ func TestScanCmd(t *testing.T) {
 		os.Stdout = oldStdout
 	}()
 
-	rootCmd.SetArgs([]string{"scan", logFile, "--quiet", "--format", "auto", "--output", "text"})
+	rootCmd.SetArgs([]string{"scan", logFile, "--quiet", "--input", "auto", "--output", "text"})
 	defer rootCmd.SetArgs(nil)
 
+	var bufOut bytes.Buffer
+	drained := make(chan struct{})
+	go func() {
+		_, _ = io.Copy(&bufOut, rOut)
+		close(drained)
+	}()
+
 	err = rootCmd.ExecuteContext(context.Background())
+	_ = wOut.Close()
+	<-drained
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-
-	_ = wOut.Close()
-	var bufOut bytes.Buffer
-	_, _ = io.Copy(&bufOut, rOut)
 
 	out := bufOut.String()
 	if !strings.Contains(out, "1.1.1.1") {

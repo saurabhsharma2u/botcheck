@@ -17,30 +17,39 @@ func (r *CSVReporter) Report(w io.Writer, res Result) error {
 	}
 
 	if !r.written {
-		if err := r.w.Write([]string{"IP", "Matched", "Source", "Category"}); err != nil {
+		if err := r.w.Write([]string{"timestamp", "ip", "matched", "prefix", "source", "category", "method", "path", "status", "bytes", "ua", "referer"}); err != nil {
 			return err
 		}
 		r.written = true
 	}
 
-	src := ""
-	cat := ""
+	e := res.Entry
+	timestamp := ""
+	if !e.Timestamp.IsZero() {
+		timestamp = e.Timestamp.Format("2006-01-02T15:04:05Z07:00")
+	}
+	prefix, source, category := "", "", ""
 	if res.Match {
-		src = res.Hit.Meta.Source
-		cat = res.Hit.Meta.Category
+		prefix = res.Hit.Prefix.String()
+		source = res.Hit.Meta.Source
+		category = res.Hit.Meta.Category
 	}
-
 	record := []string{
-		res.Entry.IP.String(),
+		timestamp,
+		e.IP.String(),
 		strconv.FormatBool(res.Match),
-		src,
-		cat,
+		prefix,
+		source,
+		category,
+		e.Method,
+		e.Path,
+		nonZero(e.Status),
+		nonZero64(e.Bytes),
+		e.UA,
+		e.Referer,
 	}
 
-	if err := r.w.Write(record); err != nil {
-		return err
-	}
-	return nil
+	return r.w.Write(record)
 }
 
 func (r *CSVReporter) Flush() error {
@@ -49,4 +58,18 @@ func (r *CSVReporter) Flush() error {
 	}
 	r.w.Flush()
 	return r.w.Error()
+}
+
+func nonZero(v int) string {
+	if v == 0 {
+		return ""
+	}
+	return strconv.Itoa(v)
+}
+
+func nonZero64(v int64) string {
+	if v == 0 {
+		return ""
+	}
+	return strconv.FormatInt(v, 10)
 }
