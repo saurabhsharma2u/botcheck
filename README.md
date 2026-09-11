@@ -68,6 +68,16 @@ sources:
     type: http
     url: https://www.perplexity.ai/perplexity-user.json
     enabled: true
+  - name: ahrefs
+    category: seo
+    type: http
+    url: https://api.ahrefs.com/v3/public/crawler-ips
+    enabled: true
+  - name: applebot
+    category: search
+    type: http
+    url: https://search.developer.apple.com/applebot.json
+    enabled: true
 ```
 
 ## Usage

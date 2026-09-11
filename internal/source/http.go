@@ -61,6 +61,21 @@ func (s *httpSource) Fetch(ctx context.Context) ([]netip.Prefix, matcher.Meta, e
 
 	var prefixes []netip.Prefix
 
+	// parsePrefixOrAddr accepts a CIDR prefix or a bare IP (treated as /32 or /128).
+	parsePrefixOrAddr := func(s string) (netip.Prefix, bool) {
+		if parsed, err := netip.ParsePrefix(s); err == nil {
+			return parsed, true
+		}
+		if addr, err := netip.ParseAddr(s); err == nil {
+			bits := 128
+			if addr.Is4() {
+				bits = 32
+			}
+			return netip.PrefixFrom(addr, bits), true
+		}
+		return netip.Prefix{}, false
+	}
+
 	// Try extracting Google bot format first.
 	var gFormat struct {
 		Prefixes []struct {
@@ -77,7 +92,7 @@ func (s *httpSource) Fetch(ctx context.Context) ([]netip.Prefix, matcher.Meta, e
 				pStr = p.IPv6Prefix
 			}
 			if pStr != "" {
-				if parsed, err := netip.ParsePrefix(pStr); err == nil {
+				if parsed, ok := parsePrefixOrAddr(pStr); ok {
 					prefixes = append(prefixes, parsed)
 				}
 			}
@@ -91,7 +106,25 @@ func (s *httpSource) Fetch(ctx context.Context) ([]netip.Prefix, matcher.Meta, e
 			for _, item := range genericFormat.Prefixes {
 				for _, val := range item {
 					if strVal, ok := val.(string); ok {
-						if parsed, err := netip.ParsePrefix(strVal); err == nil {
+						if parsed, ok := parsePrefixOrAddr(strVal); ok {
+							prefixes = append(prefixes, parsed)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Bare-IP list format, e.g. Ahrefs: {"ips": [{"ip_address": "5.39.1.224"}, ...]}
+	if len(prefixes) == 0 {
+		var ipListFormat struct {
+			IPs []map[string]interface{} `json:"ips"`
+		}
+		if err := json.Unmarshal(b, &ipListFormat); err == nil && len(ipListFormat.IPs) > 0 {
+			for _, item := range ipListFormat.IPs {
+				for _, val := range item {
+					if strVal, ok := val.(string); ok {
+						if parsed, ok := parsePrefixOrAddr(strVal); ok {
 							prefixes = append(prefixes, parsed)
 						}
 					}
