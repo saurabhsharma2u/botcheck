@@ -38,6 +38,11 @@ sources:
     type: http
     url: https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers.json
     enabled: true
+  - name: openai-chatgpt-user
+    category: ai
+    type: http
+    url: https://openai.com/chatgpt-user.json
+    enabled: true
 ```
 
 ## Usage
