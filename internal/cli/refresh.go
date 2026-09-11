@@ -15,18 +15,18 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(updateCmd)
+	rootCmd.AddCommand(refreshCmd)
 }
 
-var updateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "Update the IP registry from configured sources",
+var refreshCmd = &cobra.Command{
+	Use:   "refresh",
+	Short: "Refresh the IP registry from configured sources",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return runUpdate(cmd.Context(), configPath, os.Stdout, os.Stderr)
+		return runRefresh(cmd.Context(), configPath, os.Stdout, os.Stderr)
 	},
 }
 
-func runUpdate(ctx context.Context, cfgPath string, stdout, stderr io.Writer) error {
+func runRefresh(ctx context.Context, cfgPath string, stdout, stderr io.Writer) error {
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) && cfgPath == "botcheck.yaml" {
@@ -67,7 +67,7 @@ func runUpdate(ctx context.Context, cfgPath string, stdout, stderr io.Writer) er
 		dataVersion = man.Version
 	}
 
-	_, _ = fmt.Fprintf(stdout, "Updating botcheck registry...\n")
+	_, _ = fmt.Fprintf(stdout, "Refreshing botcheck registry...\n")
 
 	var allEntries []registry.Entry
 	stats := registry.Stats{
@@ -139,6 +139,6 @@ func runUpdate(ctx context.Context, cfgPath string, stdout, stderr io.Writer) er
 		return fmt.Errorf("save registry: %w", err)
 	}
 
-	_, _ = fmt.Fprintf(stdout, "Update complete. Total prefixes: %d\n", stats.TotalPrefixes)
+	_, _ = fmt.Fprintf(stdout, "Refresh complete. Total prefixes: %d\n", stats.TotalPrefixes)
 	return nil
 }

@@ -5,7 +5,7 @@
 Replace the compile-time embedded snapshot (`defaults/`, `DefaultConfig`,
 `embed:` paths) with a runtime-fetched registry living in this repo, so
 adding or refreshing a source never requires a binary release. Every
-`botcheck update` fetches fresh data; binary tags stay code-only.
+`botcheck refresh` fetches fresh data; binary tags stay code-only.
 
 ## Layout
 
@@ -54,7 +54,7 @@ Overlaps kept; longest-prefix match resolves them.
 - `config`: add `registry_url` (default: raw GitHub URL of
   `registry/manifest.yaml` on `main`) and `registry_ref` (branch/tag/SHA,
   default `main`). `registry_url: "off"` = offline mode (local sources only).
-- `update`: fetch manifest → build source list → merge with `botcheck.yaml`
+- `refresh`: fetch manifest → build source list → merge with `botcheck.yaml`
   sources and `imports:` (local entries win on duplicate `name`, same rule
   as today) → fetch each → save. Manifest fetch failure with a populated
   disk cache = warn + keep last-good; with an empty cache = hard error.
@@ -67,7 +67,7 @@ Overlaps kept; longest-prefix match resolves them.
 ## Test plan (all implemented)
 
 - Manifest parse + merge-order test (registry underlays, local wins).
-- `httptest` update flow: manifest + good feed + failing feed + local
+- `httptest` refresh flow: manifest + good feed + failing feed + local
   override (`TestRunUpdateRegistryMerge`).
 - Offline with populated cache keeps last-good, exit 0
   (`TestRunUpdateOfflineKeepsLastGood`).

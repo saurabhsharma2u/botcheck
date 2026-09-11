@@ -46,7 +46,7 @@ func loadStats(t *testing.T, cacheDir string) registry.Stats {
 	return reg.Stats()
 }
 
-func TestRunUpdateRegistryMerge(t *testing.T) {
+func TestRunRefreshRegistryMerge(t *testing.T) {
 	dir := t.TempDir()
 	cacheDir := filepath.Join(dir, "cache")
 
@@ -74,7 +74,7 @@ func TestRunUpdateRegistryMerge(t *testing.T) {
 	cfgPath := filepath.Join(dir, "botcheck.yaml")
 	writeFile(t, cfgPath, cfg)
 
-	if err := runUpdate(context.Background(), cfgPath, io.Discard, io.Discard); err != nil {
+	if err := runRefresh(context.Background(), cfgPath, io.Discard, io.Discard); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -96,7 +96,7 @@ func TestRunUpdateRegistryMerge(t *testing.T) {
 	}
 }
 
-func TestRunUpdateOfflineKeepsLastGood(t *testing.T) {
+func TestRunRefreshOfflineKeepsLastGood(t *testing.T) {
 	dir := t.TempDir()
 	cacheDir := filepath.Join(dir, "cache")
 
@@ -109,7 +109,7 @@ func TestRunUpdateOfflineKeepsLastGood(t *testing.T) {
 	cfgPath := filepath.Join(dir, "botcheck.yaml")
 	writeFile(t, cfgPath, fmt.Sprintf("cache_dir: %q\nregistry_url: %q\n", cacheDir, manServer.URL))
 
-	if err := runUpdate(context.Background(), cfgPath, io.Discard, io.Discard); err != nil {
+	if err := runRefresh(context.Background(), cfgPath, io.Discard, io.Discard); err != nil {
 		t.Fatalf("seed update failed: %v", err)
 	}
 	before := loadStats(t, cacheDir)
@@ -118,7 +118,7 @@ func TestRunUpdateOfflineKeepsLastGood(t *testing.T) {
 	}
 
 	manServer.Close()
-	if err := runUpdate(context.Background(), cfgPath, io.Discard, io.Discard); err != nil {
+	if err := runRefresh(context.Background(), cfgPath, io.Discard, io.Discard); err != nil {
 		t.Fatalf("expected nil error keeping last-good, got %v", err)
 	}
 	after := loadStats(t, cacheDir)
@@ -127,7 +127,7 @@ func TestRunUpdateOfflineKeepsLastGood(t *testing.T) {
 	}
 }
 
-func TestRunUpdateOfflineEmptyCacheErrors(t *testing.T) {
+func TestRunRefreshOfflineEmptyCacheErrors(t *testing.T) {
 	dir := t.TempDir()
 	dead := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	deadURL := dead.URL
@@ -136,13 +136,13 @@ func TestRunUpdateOfflineEmptyCacheErrors(t *testing.T) {
 	cfgPath := filepath.Join(dir, "botcheck.yaml")
 	writeFile(t, cfgPath, fmt.Sprintf("cache_dir: %q\nregistry_url: %q\n", filepath.Join(dir, "cache"), deadURL))
 
-	err := runUpdate(context.Background(), cfgPath, io.Discard, io.Discard)
+	err := runRefresh(context.Background(), cfgPath, io.Discard, io.Discard)
 	if err == nil {
 		t.Fatal("expected error with unreachable registry and empty cache, got nil")
 	}
 }
 
-func TestRunUpdateRegistryOff(t *testing.T) {
+func TestRunRefreshRegistryOff(t *testing.T) {
 	dir := t.TempDir()
 	cacheDir := filepath.Join(dir, "cache")
 	writeFile(t, filepath.Join(dir, "local.txt"), "9.9.9.9\n")
@@ -150,7 +150,7 @@ func TestRunUpdateRegistryOff(t *testing.T) {
 	writeFile(t, cfgPath, fmt.Sprintf("cache_dir: %q\nregistry_url: \"off\"\nsources:\n  - name: extra\n    category: test\n    type: file\n    path: %s\n    enabled: true\n",
 		cacheDir, filepath.Join(dir, "local.txt")))
 
-	if err := runUpdate(context.Background(), cfgPath, io.Discard, io.Discard); err != nil {
+	if err := runRefresh(context.Background(), cfgPath, io.Discard, io.Discard); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	stats := loadStats(t, cacheDir)

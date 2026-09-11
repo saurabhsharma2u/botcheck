@@ -229,7 +229,7 @@ Start simple (JSON + gzip). Can switch to a more compact binary format later wit
 ## 6. CLI Surface (v1)
 
 ```bash
-botcheck update [--force] [--source NAME] [--config path]
+botcheck refresh [--force] [--source NAME] [--config path]
 botcheck status
 botcheck check <IP> [--json]
 botcheck scan <logfile...> [flags]

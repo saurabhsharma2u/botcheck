@@ -9,7 +9,7 @@ import (
 	"github.com/saurabhsharma2u/iambot/internal/matcher"
 )
 
-var ErrEmpty = errors.New("registry is empty, run `botcheck update`")
+var ErrEmpty = errors.New("registry is empty, run `botcheck refresh`")
 
 type Stats struct {
 	TotalPrefixes int            `json:"total_prefixes"`

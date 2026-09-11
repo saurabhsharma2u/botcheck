@@ -6,12 +6,6 @@
 version: "2026-09-11"
 
 sources:
-  - name: googlebot
-    category: search
-    type: http
-    url: https://developers.google.com/static/search/apis/ipranges/googlebot.json
-    enabled: true
-
   - name: google-common-crawlers
     category: search
     type: http
