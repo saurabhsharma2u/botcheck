@@ -33,6 +33,11 @@ sources:
     type: http
     url: https://developers.google.com/static/crawling/ipranges/common-crawlers.json
     enabled: true
+  - name: google-user-triggered-fetchers
+    category: fetch
+    type: http
+    url: https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers.json
+    enabled: true
 ```
 
 ## Usage
