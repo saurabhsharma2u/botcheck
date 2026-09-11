@@ -43,6 +43,31 @@ sources:
     type: http
     url: https://openai.com/chatgpt-user.json
     enabled: true
+  - name: openai-searchbot
+    category: ai
+    type: http
+    url: https://openai.com/searchbot.json
+    enabled: true
+  - name: duckduckgo-duckduckbot
+    category: search
+    type: http
+    url: https://duckduckgo.com/duckduckbot.json
+    enabled: true
+  - name: bingbot
+    category: search
+    type: http
+    url: https://www.bing.com/toolbox/bingbot.json
+    enabled: true
+  - name: anthropic-claude
+    category: ai
+    type: http
+    url: https://claude.com/crawling/bots.json
+    enabled: true
+  - name: perplexity-user
+    category: ai
+    type: http
+    url: https://www.perplexity.ai/perplexity-user.json
+    enabled: true
 ```
 
 ## Usage
