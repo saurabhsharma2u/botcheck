@@ -33,7 +33,7 @@ That's it — no config needed. `update` fetches the curated registry,
 
 ## Covered bots
 
-**Search:** Googlebot, Google common crawlers, Bingbot, DuckDuckBot, Applebot ·
+**Search:** Googlebot, Google common crawlers, Bingbot, DuckDuckBot, Applebot, Yandex ·
 **Fetch:** Google user-triggered fetchers ·
 **AI:** ChatGPT-User, OpenAI SearchBot, Claude, Perplexity ·
 **SEO / Social:** Ahrefs, Facebook/Meta
@@ -64,6 +64,23 @@ sources:
 
 Your entries override registry ones with the same `name`. Large setups can
 split across files with `imports: ["sources.d/*.yaml"]`.
+
+## Scheduled refresh
+
+Units ship inside the binary — no extra files needed whatever install
+method you used. This installs a daily run (systemd user timer on Linux,
+LaunchAgent on macOS):
+
+```bash
+botcheck schedule install
+botcheck schedule status
+botcheck schedule uninstall
+```
+
+Options: `--at 04:30` sets the daily time, `--unit-config PATH` bakes a
+config file into the unit (default: normal config discovery).
+`refresh` takes an overlap lock (`<cache>/refresh.lock`), so overlapping
+scheduled runs can never corrupt the cache.
 
 ## How it works
 

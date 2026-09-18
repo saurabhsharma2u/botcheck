@@ -142,6 +142,26 @@ func TestRunRefreshOfflineEmptyCacheErrors(t *testing.T) {
 	}
 }
 
+func TestRunRefreshLockContention(t *testing.T) {
+	dir := t.TempDir()
+	cacheDir := filepath.Join(dir, "cache")
+
+	release, err := acquireCacheLock(cacheDir)
+	if err != nil {
+		t.Fatalf("acquire lock: %v", err)
+	}
+	defer release()
+
+	writeFile(t, filepath.Join(dir, "local.txt"), "9.9.9.9\n")
+	cfgPath := filepath.Join(dir, "botcheck.yaml")
+	writeFile(t, cfgPath, fmt.Sprintf("cache_dir: %q\nregistry_url: \"off\"\nsources:\n  - name: extra\n    category: test\n    type: file\n    path: %s\n    enabled: true\n",
+		cacheDir, filepath.Join(dir, "local.txt")))
+
+	if err := runRefresh(context.Background(), cfgPath, io.Discard, io.Discard); err == nil {
+		t.Fatal("expected lock contention error, got nil")
+	}
+}
+
 func TestRunRefreshRegistryOff(t *testing.T) {
 	dir := t.TempDir()
 	cacheDir := filepath.Join(dir, "cache")

@@ -24,17 +24,20 @@ type diskRegistry struct {
 
 func NewDiskRegistry(cacheDir string) Registry {
 	if cacheDir == "" {
-		if xdg := os.Getenv("XDG_CACHE_HOME"); xdg != "" {
-			cacheDir = filepath.Join(xdg, "botcheck")
-		} else {
-			home, _ := os.UserHomeDir()
-			cacheDir = filepath.Join(home, ".cache", "botcheck")
-		}
+		cacheDir = DefaultCacheDir()
 	}
 	return &diskRegistry{
 		cacheDir: cacheDir,
 		m:        matcher.New(),
 	}
+}
+
+func DefaultCacheDir() string {
+	if xdg := os.Getenv("XDG_CACHE_HOME"); xdg != "" {
+		return filepath.Join(xdg, "botcheck")
+	}
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".cache", "botcheck")
 }
 
 func (r *diskRegistry) manifestPath() string {

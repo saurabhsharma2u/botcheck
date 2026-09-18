@@ -42,6 +42,18 @@ func runRefresh(ctx context.Context, cfgPath string, stdout, stderr io.Writer) e
 	}
 	haveCache := reg.Stats().TotalPrefixes > 0
 
+	// Overlap guard for scheduled runs (systemd timer, launchd, cron):
+	// never rewrite the cache from two processes at once.
+	cacheDir := cfg.CacheDir
+	if cacheDir == "" {
+		cacheDir = registry.DefaultCacheDir()
+	}
+	release, err := acquireCacheLock(cacheDir)
+	if err != nil {
+		return err
+	}
+	defer release()
+
 	var man *config.RegistryManifest
 	if cfg.RegistryURL == "off" {
 		_, _ = fmt.Fprintf(stderr, "Registry disabled, using local sources only.\n")

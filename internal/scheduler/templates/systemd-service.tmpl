@@ -1,0 +1,8 @@
+[Unit]
+Description=Refresh botcheck bot IP registry
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart={{.Binary}} refresh{{if .Config}} --config {{.Config}}{{end}}

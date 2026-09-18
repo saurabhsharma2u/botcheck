@@ -3,7 +3,7 @@
 # Lists WITH a publisher URL stay pointers (always fresh, no mirroring).
 # Only sourceless lists (e.g. Meta, no publisher feed) are stored as data
 # files under provider folders.
-version: "2026-09-11"
+version: "2026-09-18"
 
 sources:
   - name: google-common-crawlers
@@ -70,4 +70,10 @@ sources:
     category: social
     type: http
     url: https://raw.githubusercontent.com/saurabhsharma2u/botcheck/main/registry/meta/fb.txt
+    enabled: true
+
+  - name: yandex
+    category: search
+    type: http
+    url: https://raw.githubusercontent.com/saurabhsharma2u/botcheck/main/registry/meta/yandex.txt
     enabled: true

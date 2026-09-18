@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily refresh of botcheck bot IP registry
+
+[Timer]
+OnCalendar=*-*-* {{.Hour}}:{{.Minute}}:00
+RandomizedDelaySec=30m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
