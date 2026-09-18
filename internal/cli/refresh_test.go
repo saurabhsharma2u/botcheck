@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,6 +20,15 @@ func writeFile(t *testing.T, path, content string) {
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func mustParseAddr(t *testing.T, s string) netip.Addr {
+	t.Helper()
+	ip, err := netip.ParseAddr(s)
+	if err != nil {
+		t.Fatalf("parse addr %q: %v", s, err)
+	}
+	return ip
 }
 
 func feedServer(prefixes ...string) *httptest.Server {
@@ -159,6 +169,39 @@ func TestRunRefreshLockContention(t *testing.T) {
 
 	if err := runRefresh(context.Background(), cfgPath, io.Discard, io.Discard); err == nil {
 		t.Fatal("expected lock contention error, got nil")
+	}
+}
+
+func TestRunRefreshStampsVerifySuffixes(t *testing.T) {
+	dir := t.TempDir()
+	cacheDir := filepath.Join(dir, "cache")
+	writeFile(t, filepath.Join(dir, "local.txt"), "9.9.9.0/24\n")
+	cfgPath := filepath.Join(dir, "botcheck.yaml")
+	writeFile(t, cfgPath, fmt.Sprintf("cache_dir: %q\nregistry_url: \"off\"\nsources:\n  - name: extra\n    category: test\n    type: file\n    path: %s\n    enabled: true\n    verify_suffixes: [\"example.com\", \"example.net\"]\n",
+		cacheDir, filepath.Join(dir, "local.txt")))
+
+	if err := runRefresh(context.Background(), cfgPath, io.Discard, io.Discard); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	reg := registry.NewDiskRegistry(cacheDir)
+	if err := reg.Load(context.Background()); err != nil {
+		t.Fatalf("load registry: %v", err)
+	}
+	hit, ok := reg.Contains(mustParseAddr(t, "9.9.9.9"))
+	if !ok {
+		t.Fatal("expected 9.9.9.9 to match")
+	}
+	if got := hit.Meta.Extra["verify_suffixes"]; got != "example.com,example.net" {
+		t.Errorf("expected stamped suffixes, got %q", got)
+	}
+
+	bySource, err := registry.LoadVerifyMap(cacheDir)
+	if err != nil {
+		t.Fatalf("load verify map: %v", err)
+	}
+	if len(bySource["extra"]) != 2 || bySource["extra"][0] != "example.com" {
+		t.Errorf("unexpected verify map: %v", bySource)
 	}
 }
 

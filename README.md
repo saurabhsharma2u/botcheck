@@ -26,7 +26,7 @@ That's it — no config needed. `update` fetches the curated registry,
 | Command | What it does |
 |---|---|
 | `botcheck refresh` | Download the latest bot IP ranges into the local cache |
-| `botcheck check 40.77.167.61` | Check a single IP (`--json` for machine output) |
+| `botcheck check 40.77.167.61` | Check a single IP (`--json` for machine output, `--dns` to confirm via reverse DNS) |
 | `botcheck scan access.log` | Check every IP in a log file (`--only-matched`, `--output text\|json\|csv`, `--input nginx|apache|json|cloudflare`) |
 | `botcheck status` | Show loaded sources, data version, and totals |
 | `botcheck --version` | Print the version |
@@ -35,10 +35,34 @@ That's it — no config needed. `update` fetches the curated registry,
 
 **Search:** Googlebot, Google common crawlers, Bingbot, DuckDuckBot, Applebot, Yandex ·
 **Fetch:** Google user-triggered fetchers ·
-**AI:** ChatGPT-User, OpenAI SearchBot, Claude, Perplexity ·
+**AI:** ChatGPT-User, OpenAI SearchBot, Claude, PerplexityBot, Perplexity-User ·
 **SEO / Social:** Ahrefs, Facebook/Meta
 
 Run `botcheck status` for live counts per source.
+
+## Verifying crawlers
+
+A registry match proves network origin; `--dns` additionally confirms
+identity with forward-confirmed reverse DNS (PTR hostname must sit under
+the source's documented domain *and* resolve back to the IP):
+
+```bash
+botcheck check 66.249.66.1 --dns
+# MATCH ... DNS: verified (crawl-66-249-66-1.googlebot.com)
+```
+
+Covered: Google (`googlebot.com`, fetchers `googleusercontent.com`),
+Bing (`search.msn.com`), Yandex (`yandex.ru/net/com`), Apple
+(`applebot.apple.com`). Sources without documented domains report
+`unverifiable` — never spoof. DNS runs only on matches and never flips
+one; a mismatch is reported, not hidden. Requires network.
+
+No range match? `--dns` falls back automatically: the PTR hostname is
+checked against *every* known source's domains and forward-confirmed.
+A genuine bot from an unlisted range (Yandex rotates undisclosed IPs)
+reports `verified via <source>`; anything else shows the PTR as a
+triage hint. One pass only — each hostname resolved once, results never
+re-enter lookup, so no loops.
 
 ## Custom sources
 

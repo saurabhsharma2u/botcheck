@@ -30,6 +30,10 @@ type SourceConfig struct {
 	URL      string `yaml:"url"`
 	Path     string `yaml:"path"`
 	Enabled  bool   `yaml:"enabled"`
+	// VerifySuffixes lists reverse-DNS suffixes that genuinely belong to
+	// this source (e.g. ["googlebot.com"]). Empty = not verifiable via DNS.
+	// No validation: unknown entries simply never match.
+	VerifySuffixes []string `yaml:"verify_suffixes"`
 }
 
 func Load(path string) (*Config, error) {

@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/saurabhsharma2u/botcheck/internal/config"
+	"github.com/saurabhsharma2u/botcheck/internal/dnsverify"
 	"github.com/saurabhsharma2u/botcheck/internal/registry"
 	"github.com/saurabhsharma2u/botcheck/internal/source"
 	"github.com/spf13/cobra"
@@ -128,6 +130,16 @@ func runRefresh(ctx context.Context, cfgPath string, stdout, stderr io.Writer) e
 				return
 			}
 
+			// Stamp DNS verification suffixes into free-form metadata so
+			// offline commands (check/scan --dns) can use them. No Source
+			// interface or disk-format change: Meta.Extra already persists.
+			if len(sc.VerifySuffixes) > 0 {
+				if meta.Extra == nil {
+					meta.Extra = make(map[string]string)
+				}
+				meta.Extra[dnsverify.ExtraKey] = strings.Join(sc.VerifySuffixes, ",")
+			}
+
 			for _, p := range prefixes {
 				allEntries = append(allEntries, registry.Entry{
 					Prefix: p.String(),
@@ -149,6 +161,20 @@ func runRefresh(ctx context.Context, cfgPath string, stdout, stderr io.Writer) e
 
 	if err := reg.SaveRaw(ctx, allEntries, stats); err != nil {
 		return fmt.Errorf("save registry: %w", err)
+	}
+
+	// Persist verification suffixes for successfully fetched sources so
+	// --dns can fall back to reverse DNS for IPs with no range match.
+	// stats.Sources only contains fetched sources, so this doubles as the
+	// fetched-set. Reading stats here is safe: wg.Wait() happened above.
+	verifySources := make(map[string][]string)
+	for _, sc := range sources {
+		if _, ok := stats.Sources[sc.Name]; ok && len(sc.VerifySuffixes) > 0 {
+			verifySources[sc.Name] = sc.VerifySuffixes
+		}
+	}
+	if err := registry.SaveVerifyMap(cacheDir, verifySources); err != nil {
+		return fmt.Errorf("save verify map: %w", err)
 	}
 
 	_, _ = fmt.Fprintf(stdout, "Refresh complete. Total prefixes: %d\n", stats.TotalPrefixes)

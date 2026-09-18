@@ -11,12 +11,14 @@ sources:
     type: http
     url: https://developers.google.com/static/crawling/ipranges/common-crawlers.json
     enabled: true
+    verify_suffixes: ["googlebot.com"]
 
   - name: google-user-triggered-fetchers
     category: fetch
     type: http
     url: https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers.json
     enabled: true
+    verify_suffixes: ["googleusercontent.com"]
 
   - name: openai-chatgpt-user
     category: ai
@@ -41,6 +43,7 @@ sources:
     type: http
     url: https://www.bing.com/toolbox/bingbot.json
     enabled: true
+    verify_suffixes: ["search.msn.com"]
 
   - name: anthropic-claude
     category: ai
@@ -51,7 +54,13 @@ sources:
   - name: perplexity-user
     category: ai
     type: http
-    url: https://www.perplexity.ai/perplexity-user.json
+    url: https://www.perplexity.com/perplexity-user.json
+    enabled: true
+
+  - name: perplexitybot
+    category: ai
+    type: http
+    url: https://www.perplexity.com/perplexitybot.json
     enabled: true
 
   - name: ahrefs
@@ -65,6 +74,7 @@ sources:
     type: http
     url: https://search.developer.apple.com/applebot.json
     enabled: true
+    verify_suffixes: ["applebot.apple.com"]
 
   - name: facebook
     category: social
@@ -77,3 +87,4 @@ sources:
     type: http
     url: https://raw.githubusercontent.com/saurabhsharma2u/botcheck/main/registry/meta/yandex.txt
     enabled: true
+    verify_suffixes: ["yandex.ru", "yandex.net", "yandex.com"]
