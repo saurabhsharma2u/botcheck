@@ -94,3 +94,9 @@ sources:
     type: dns
     enabled: true
     verify_suffixes: ["sogou.com"]
+
+  - name: twitterbot
+    category: social
+    type: http
+    url: https://raw.githubusercontent.com/saurabhsharma2u/botcheck/main/registry/meta/twitter.txt
+    enabled: true

@@ -166,6 +166,40 @@ func TestYandexRegistryFile(t *testing.T) {
 	}
 }
 
+func TestTwitterRegistryFile(t *testing.T) {
+	content, err := os.ReadFile("../../registry/meta/twitter.txt")
+	if err != nil {
+		t.Fatalf("read twitter.txt: %v", err)
+	}
+
+	seen := make(map[string]bool)
+	count := 0
+	for _, line := range strings.Split(string(content), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		if _, ok := parsePrefixOrAddr(line); !ok {
+			t.Errorf("unparseable line: %q", line)
+		}
+		if seen[line] {
+			t.Errorf("duplicate line: %q", line)
+		}
+		seen[line] = true
+		count++
+	}
+
+	if count != 3 {
+		t.Errorf("expected 3 prefixes in twitter.txt, got %d", count)
+	}
+
+	for _, want := range []string{"199.16.156.0/22", "199.59.148.0/22", "199.59.150.0/24"} {
+		if !seen[want] {
+			t.Errorf("expected %q in twitter.txt, missing", want)
+		}
+	}
+}
+
 func TestHTTPFetchTooLarge(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(bytes.Repeat([]byte("x"), maxFeedBytes+10))

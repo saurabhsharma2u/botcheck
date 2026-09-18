@@ -36,7 +36,7 @@ That's it — no config needed. `update` fetches the curated registry,
 **Search:** Googlebot, Google common crawlers, Bingbot, DuckDuckBot, Applebot, Yandex ·
 **Fetch:** Google user-triggered fetchers ·
 **AI:** ChatGPT-User, OpenAI SearchBot, Claude, PerplexityBot, Perplexity-User ·
-**SEO / Social:** Ahrefs, Facebook/Meta
+**SEO / Social:** Ahrefs, Facebook/Meta, X/Twitter
 
 Run `botcheck status` for live counts per source.
 
