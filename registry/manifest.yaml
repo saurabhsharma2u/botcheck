@@ -88,3 +88,9 @@ sources:
     url: https://raw.githubusercontent.com/saurabhsharma2u/botcheck/main/registry/meta/yandex.txt
     enabled: true
     verify_suffixes: ["yandex.ru", "yandex.net", "yandex.com"]
+
+  - name: sogou
+    category: search
+    type: dns
+    enabled: true
+    verify_suffixes: ["sogou.com"]

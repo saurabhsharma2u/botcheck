@@ -221,3 +221,50 @@ func TestRunRefreshRegistryOff(t *testing.T) {
 		t.Errorf("unexpected stats: %+v", stats)
 	}
 }
+
+func TestRunRefreshDNSOnlySource(t *testing.T) {
+	dir := t.TempDir()
+	cacheDir := filepath.Join(dir, "cache")
+	writeFile(t, filepath.Join(dir, "local.txt"), "9.9.9.0/24\n")
+	cfgPath := filepath.Join(dir, "botcheck.yaml")
+	writeFile(t, cfgPath, fmt.Sprintf("cache_dir: %q\nregistry_url: \"off\"\nsources:\n"+
+		"  - name: extra\n    category: test\n    type: file\n    path: %s\n    enabled: true\n"+
+		"  - name: sogou\n    category: search\n    type: dns\n    enabled: true\n    verify_suffixes: [\"sogou.com\"]\n",
+		cacheDir, filepath.Join(dir, "local.txt")))
+
+	if err := runRefresh(context.Background(), cfgPath, io.Discard, io.Discard); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	bySource, err := registry.LoadVerifyMap(cacheDir)
+	if err != nil {
+		t.Fatalf("load verify map: %v", err)
+	}
+	if len(bySource["sogou"]) != 1 || bySource["sogou"][0] != "sogou.com" {
+		t.Errorf("dns-only source missing from verify map: %v", bySource)
+	}
+	// Prefix data must be unaffected by the dns-only entry.
+	if stats := loadStats(t, cacheDir); stats.TotalPrefixes != 1 {
+		t.Errorf("expected 1 prefix, got %d", stats.TotalPrefixes)
+	}
+}
+
+func TestRunRefreshDNSOnlyWritesVerifyMap(t *testing.T) {
+	dir := t.TempDir()
+	cacheDir := filepath.Join(dir, "cache")
+	cfgPath := filepath.Join(dir, "botcheck.yaml")
+	writeFile(t, cfgPath, fmt.Sprintf("cache_dir: %q\nregistry_url: \"off\"\nsources:\n"+
+		"  - name: sogou\n    category: search\n    type: dns\n    enabled: true\n    verify_suffixes: [\"sogou.com\"]\n",
+		cacheDir))
+
+	if err := runRefresh(context.Background(), cfgPath, io.Discard, io.Discard); err != nil {
+		t.Fatalf("dns-only refresh must succeed, got: %v", err)
+	}
+	bySource, err := registry.LoadVerifyMap(cacheDir)
+	if err != nil {
+		t.Fatalf("load verify map: %v", err)
+	}
+	if len(bySource["sogou"]) != 1 {
+		t.Errorf("unexpected verify map: %v", bySource)
+	}
+}

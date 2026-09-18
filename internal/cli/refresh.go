@@ -92,6 +92,7 @@ func runRefresh(ctx context.Context, cfgPath string, stdout, stderr io.Writer) e
 
 	var mu sync.Mutex
 	var wg sync.WaitGroup
+	verifySources := make(map[string][]string)
 	for _, sc := range sources {
 		if !sc.Enabled {
 			continue
@@ -99,6 +100,16 @@ func runRefresh(ctx context.Context, cfgPath string, stdout, stderr io.Writer) e
 		wg.Add(1)
 		go func(sc config.SourceConfig) {
 			defer wg.Done()
+
+			// Suffixes-only source: no prefixes to fetch, just register
+			// its verification domains (bots with no published IP feed).
+			if sc.Type == "dns" {
+				mu.Lock()
+				verifySources[sc.Name] = sc.VerifySuffixes
+				_, _ = fmt.Fprintf(stdout, "Registered %s (dns-only, %d suffixes)\n", sc.Name, len(sc.VerifySuffixes))
+				mu.Unlock()
+				return
+			}
 
 			loc := sc.URL
 			if sc.Type == "file" {
@@ -156,6 +167,15 @@ func runRefresh(ctx context.Context, cfgPath string, stdout, stderr io.Writer) e
 	wg.Wait()
 
 	if len(allEntries) == 0 {
+		// DNS-only refresh: no prefixes, but suffixes are still worth
+		// persisting. Prefix data on disk is left untouched.
+		if len(verifySources) > 0 {
+			if err := registry.SaveVerifyMap(cacheDir, verifySources); err != nil {
+				return fmt.Errorf("save verify map: %w", err)
+			}
+			_, _ = fmt.Fprintf(stdout, "Refresh complete. No prefixes (dns-only sources).\n")
+			return nil
+		}
 		return fmt.Errorf("no prefixes fetched from any source")
 	}
 
@@ -167,7 +187,6 @@ func runRefresh(ctx context.Context, cfgPath string, stdout, stderr io.Writer) e
 	// --dns can fall back to reverse DNS for IPs with no range match.
 	// stats.Sources only contains fetched sources, so this doubles as the
 	// fetched-set. Reading stats here is safe: wg.Wait() happened above.
-	verifySources := make(map[string][]string)
 	for _, sc := range sources {
 		if _, ok := stats.Sources[sc.Name]; ok && len(sc.VerifySuffixes) > 0 {
 			verifySources[sc.Name] = sc.VerifySuffixes

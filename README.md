@@ -53,7 +53,7 @@ botcheck check 66.249.66.1 --dns
 
 Covered: Google (`googlebot.com`, fetchers `googleusercontent.com`),
 Bing (`search.msn.com`), Yandex (`yandex.ru/net/com`), Apple
-(`applebot.apple.com`). Sources without documented domains report
+(`applebot.apple.com`), Sogou (`sogou.com`, DNS-only — no published range). Sources without documented domains report
 `unverifiable` — never spoof. DNS runs only on matches and never flips
 one; a mismatch is reported, not hidden. Requires network.
 

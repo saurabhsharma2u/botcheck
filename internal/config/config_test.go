@@ -135,12 +135,13 @@ func TestMergeSources(t *testing.T) {
 
 func TestLoadValidation(t *testing.T) {
 	cases := map[string]string{
-		"empty name":     "sources:\n  - name: \"\"\n    category: x\n    type: http\n    url: https://example.com/a.json\n    enabled: true\n",
-		"unknown type":   "sources:\n  - name: a\n    category: x\n    type: ftp\n    url: https://example.com/a.json\n    enabled: true\n",
-		"http w/o url":   "sources:\n  - name: a\n    category: x\n    type: http\n    enabled: true\n",
-		"bad url":        "sources:\n  - name: a\n    category: x\n    type: http\n    url: \"::not-a-url\"\n    enabled: true\n",
-		"file w/o path":  "sources:\n  - name: a\n    category: x\n    type: file\n    enabled: true\n",
-		"duplicate name": "sources:\n  - name: a\n    category: x\n    type: http\n    url: https://example.com/a.json\n    enabled: true\n  - name: a\n    category: y\n    type: http\n    url: https://example.com/b.json\n    enabled: true\n",
+		"empty name":       "sources:\n  - name: \"\"\n    category: x\n    type: http\n    url: https://example.com/a.json\n    enabled: true\n",
+		"unknown type":     "sources:\n  - name: a\n    category: x\n    type: ftp\n    url: https://example.com/a.json\n    enabled: true\n",
+		"http w/o url":     "sources:\n  - name: a\n    category: x\n    type: http\n    enabled: true\n",
+		"bad url":          "sources:\n  - name: a\n    category: x\n    type: http\n    url: \"::not-a-url\"\n    enabled: true\n",
+		"file w/o path":    "sources:\n  - name: a\n    category: x\n    type: file\n    enabled: true\n",
+		"dns w/o suffixes": "sources:\n  - name: a\n    category: x\n    type: dns\n    enabled: true\n",
+		"duplicate name":   "sources:\n  - name: a\n    category: x\n    type: http\n    url: https://example.com/a.json\n    enabled: true\n  - name: a\n    category: y\n    type: http\n    url: https://example.com/b.json\n    enabled: true\n",
 	}
 
 	for name, content := range cases {

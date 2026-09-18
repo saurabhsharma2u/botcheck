@@ -94,6 +94,12 @@ func (c *Config) validate(origin string) error {
 			if s.Path == "" {
 				return fmt.Errorf("%s: source %q: file requires path", origin, s.Name)
 			}
+		case "dns":
+			// Suffixes-only source: no prefixes fetched, used purely for
+			// --dns verification (e.g. bots with no published IP feed).
+			if len(s.VerifySuffixes) == 0 {
+				return fmt.Errorf("%s: source %q: dns requires verify_suffixes", origin, s.Name)
+			}
 		default:
 			return fmt.Errorf("%s: source %q: unsupported type %q", origin, s.Name, s.Type)
 		}
