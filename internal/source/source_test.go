@@ -223,16 +223,16 @@ func TestAnthropicAPIRegistryFile(t *testing.T) {
 		count++
 	}
 
-	if count != 1 {
-		t.Errorf("expected 1 prefix in anthropic-api.txt, got %d", count)
+	if count != 2 {
+		t.Errorf("expected 2 prefixes in anthropic-api.txt, got %d", count)
 	}
 
-	for _, want := range []string{"160.79.104.0/21"} {
+	for _, want := range []string{"160.79.104.0/21", "2607:6bc0::/48"} {
 		if !seen[want] {
 			t.Errorf("expected %q in anthropic-api.txt, missing", want)
 		}
 	}
-	for _, absent := range []string{"34.162.46.92/32", "160.79.104.0/23", "2607:6bc0::/48"} {
+	for _, absent := range []string{"34.162.46.92/32", "160.79.104.0/23"} {
 		if seen[absent] {
 			t.Errorf("expected %q absent from anthropic-api.txt, present", absent)
 		}

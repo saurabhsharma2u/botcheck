@@ -1,7 +1,10 @@
-# Anthropic API outbound IPs (MCP connectors, web search, web fetch).
+# Anthropic API outbound IPs (MCP connectors, web search, web fetch),
+# plus the documented inbound IPv6 block: the space is Anthropic-owned,
+# so any of it appearing as a source IP is still Anthropic infra.
 # Source: https://platform.claude.com/docs/en/api/ip-addresses
-# Static list; no publisher feed exists. Inbound ranges intentionally
-# excluded (Anthropic's own endpoints, never source IPs in your logs),
-# as are the phased-out 34.162.x addresses.
+# Static list; no publisher feed exists. Inbound IPv4 range excluded
+# (covered by the outbound /21 below), as are the phased-out 34.162.x
+# addresses.
 # One CIDR per line.
 160.79.104.0/21
+2607:6bc0::/48
