@@ -1,0 +1,7 @@
+# Anthropic API outbound IPs (MCP connectors, web search, web fetch).
+# Source: https://platform.claude.com/docs/en/api/ip-addresses
+# Static list; no publisher feed exists. Inbound ranges intentionally
+# excluded (Anthropic's own endpoints, never source IPs in your logs),
+# as are the phased-out 34.162.x addresses.
+# One CIDR per line.
+160.79.104.0/21

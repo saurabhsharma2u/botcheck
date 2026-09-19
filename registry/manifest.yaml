@@ -100,3 +100,9 @@ sources:
     type: http
     url: https://raw.githubusercontent.com/saurabhsharma2u/botcheck/main/registry/meta/twitter.txt
     enabled: true
+
+  - name: anthropic-api
+    category: ai
+    type: http
+    url: https://raw.githubusercontent.com/saurabhsharma2u/botcheck/main/registry/meta/anthropic-api.txt
+    enabled: true

@@ -200,6 +200,45 @@ func TestTwitterRegistryFile(t *testing.T) {
 	}
 }
 
+func TestAnthropicAPIRegistryFile(t *testing.T) {
+	content, err := os.ReadFile("../../registry/meta/anthropic-api.txt")
+	if err != nil {
+		t.Fatalf("read anthropic-api.txt: %v", err)
+	}
+
+	seen := make(map[string]bool)
+	count := 0
+	for _, line := range strings.Split(string(content), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		if _, ok := parsePrefixOrAddr(line); !ok {
+			t.Errorf("unparseable line: %q", line)
+		}
+		if seen[line] {
+			t.Errorf("duplicate line: %q", line)
+		}
+		seen[line] = true
+		count++
+	}
+
+	if count != 1 {
+		t.Errorf("expected 1 prefix in anthropic-api.txt, got %d", count)
+	}
+
+	for _, want := range []string{"160.79.104.0/21"} {
+		if !seen[want] {
+			t.Errorf("expected %q in anthropic-api.txt, missing", want)
+		}
+	}
+	for _, absent := range []string{"34.162.46.92/32", "160.79.104.0/23", "2607:6bc0::/48"} {
+		if seen[absent] {
+			t.Errorf("expected %q absent from anthropic-api.txt, present", absent)
+		}
+	}
+}
+
 func TestHTTPFetchTooLarge(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(bytes.Repeat([]byte("x"), maxFeedBytes+10))
